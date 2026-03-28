@@ -1,0 +1,26 @@
+/* Import Satoshi Font from Fontshare BEFORE Tailwind import */
+@import url('https://api.fontshare.com/v2/css?f[]=satoshi@300,400,500,700,900&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Satoshi", "Satoshi Placeholder", "Inter", "Geist Sans", "ui-sans-serif", "system-ui", "sans-serif";
+  --color-background: #000000;
+  --color-foreground: #ffffff;
+  --color-card: #0b0b0b;
+  --color-muted: #999999;
+  --color-border: #1a1a1a;
+}
+
+@layer base {
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    @apply font-sans antialiased selection:bg-white/10;
+  }
+}
+
+@layer utilities {
+  .glass {
+    @apply backdrop-blur-md bg-black/60 border border-white/10 shadow-lg;
+  }
+}
