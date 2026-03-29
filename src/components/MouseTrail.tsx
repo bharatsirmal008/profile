@@ -6,6 +6,7 @@ import { motion, useSpring, useMotionValue } from "framer-motion";
 export function MouseTrail() {
   const [isMounted, setIsMounted] = useState(false);
   const [isHovering, setIsHovering] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   
   // Base mouse position
   const mouseX = useMotionValue(-100);
@@ -36,6 +37,16 @@ export function MouseTrail() {
   useEffect(() => {
     setIsMounted(true);
     
+    const checkMobile = () => {
+      // Hide on touch devices or small screens
+      const isTouch = window.matchMedia("(pointer: coarse)").matches;
+      const isSmallScreen = window.innerWidth < 768;
+      setIsMobile(isTouch || isSmallScreen);
+    };
+
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    
     const handleMouseMove = (e: MouseEvent) => {
       mouseX.set(e.clientX);
       mouseY.set(e.clientY);
@@ -50,10 +61,13 @@ export function MouseTrail() {
     };
 
     window.addEventListener("mousemove", handleMouseMove);
-    return () => window.removeEventListener("mousemove", handleMouseMove);
+    return () => {
+      window.removeEventListener("resize", checkMobile);
+      window.removeEventListener("mousemove", handleMouseMove);
+    };
   }, [mouseX, mouseY]);
 
-  if (!isMounted) return null;
+  if (!isMounted || isMobile) return null;
 
   return (
     <div className="pointer-events-none fixed inset-0 z-[10000]">

@@ -26,15 +26,15 @@ export interface Project {
 
 export const projects: Project[] = [
   {
-    slug: "eceb-gaming",
-    title: "ECEB Gaming",
+    slug: "frameforge-gaming",
+    title: "frameforge Gaming",
     category: "Web • Gaming",
     year: "2024",
     role: "Frontend Developer",
     description: "An immersive gaming e-commerce platform that combines a high-end product showcase with a robust authentication system. Designed to sell premium gaming gear while providing a seamless, direct-line service experience for customers to resolve issues quickly.",
     image: "/eceb_preview.png",
     isTall: false,
-    client: "ECEB",
+    client: "gaming",
     serviceProvided: "Web Development, UI Design",
     liveLink: "https://eceb-frontend.vercel.app/",
     goal: {
