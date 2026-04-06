@@ -43,8 +43,8 @@ export const PremiumButton = ({ children, variant = "primary", className, href, 
   const baseStyles = "relative inline-flex items-center justify-center px-8 py-4 rounded-2xl text-[15px] font-bold transition-all duration-300 overflow-hidden active:scale-95";
   
   const styles = isPrimary 
-    ? "bg-white text-black shadow-[0_4px_24px_rgba(255,255,255,0.12),inset_0_-2px_4px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_32px_rgba(255,255,255,0.18)]"
-    : "bg-[#111113] backdrop-blur-md text-white border border-white/[0.04] hover:bg-[#1a1a1c] hover:border-white/[0.08] shadow-[0_10px_30px_-5px_rgba(0,0,0,0.6)]";
+    ? "bg-primary text-white shadow-[0_4px_24px_rgba(37,99,235,0.2),inset_0_-2px_4px_rgba(255,255,255,0.1)] hover:bg-primary/90 hover:shadow-[0_8px_32px_rgba(37,99,235,0.3)]"
+    : "bg-secondary text-white hover:bg-secondary/90 shadow-[0_10px_30px_-5px_rgba(30,58,138,0.2)]";
 
   if (href) {
     return (

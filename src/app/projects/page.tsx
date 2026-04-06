@@ -16,7 +16,7 @@ import { Footer } from "@/components/Footer";
 
 export default function ProjectsListingPage() {
   return (
-    <main className="min-h-screen bg-black text-white selection:bg-white/10 overflow-x-hidden pt-48 pb-0">
+    <main className="min-h-screen bg-background text-foreground selection:bg-zinc-100 overflow-x-hidden pt-48 pb-0">
       <Navbar />
       
       {/* 1. Hero Section (Matched to Screenshot 1) */}
@@ -24,9 +24,9 @@ export default function ProjectsListingPage() {
         <motion.div
            initial={{ opacity: 0, y: 20 }}
            animate={{ opacity: 1, y: 0 }}
-           className="inline-flex items-center gap-2 px-6 py-2 rounded-full border border-white/10 bg-zinc-900/50 text-[11px] font-bold text-zinc-400 uppercase tracking-[0.4em] mb-12 shadow-2xl backdrop-blur-3xl"
+           className="inline-flex items-center gap-2 px-6 py-2 rounded-full border border-border bg-card text-[11px] font-bold text-muted uppercase tracking-[0.4em] mb-12 shadow-sm backdrop-blur-3xl"
         >
-           <div className="w-1.5 h-1.5 rounded-full bg-white/40 shadow-[0_0_10px_white]" />
+           <div className="w-1.5 h-1.5 rounded-full bg-primary/40 shadow-[0_0_10px_rgba(37,99,235,0.1)]" />
            Recent Projects
         </motion.div>
 
@@ -34,10 +34,10 @@ export default function ProjectsListingPage() {
            initial={{ opacity: 0, y: 30 }}
            animate={{ opacity: 1, y: 0 }}
            transition={{ duration: 1, delay: 0.2 }}
-           className="text-6xl md:text-[50px]  tracking-tighter leading-[0.9] text-white max-w-[1200px] mx-auto mb-16"
+           className="text-6xl md:text-[50px]  tracking-tighter leading-[0.9] text-foreground max-w-[1200px] mx-auto mb-16"
         >
            Building Scalable Solutions to Drive  <br />
-           <span className="text-zinc-600 block sm:inline">Innovation and Impact</span>
+           <span className="text-primary block sm:inline font-bold">Innovation and Impact</span>
         </motion.h1>
 
         <motion.div
@@ -45,9 +45,9 @@ export default function ProjectsListingPage() {
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 1, delay: 0.4 }}
         >
-          <button className="px-14 py-6 rounded-[20px] cursor-pointer bg-white text-black font-black text-xl hover:bg-zinc-200 transition-all active:scale-95 shadow-[0_0_60px_rgba(255,255,255,0.15)] flex items-center justify-center gap-4 mx-auto">
+          <Link href="/contact" className="px-14 py-6 rounded-[20px] cursor-pointer bg-primary text-white font-black text-xl hover:bg-primary/90 transition-all active:scale-95 shadow-[0_20px_40px_-5px_rgba(37,99,235,0.2)] flex items-center justify-center gap-4 mx-auto w-fit">
             Contact Now
-          </button>
+          </Link>
         </motion.div>
       </section>
 
@@ -64,21 +64,21 @@ export default function ProjectsListingPage() {
                className="group"
              >
                <Link href={`/projects/${project.slug}`}>
-                 <div className="relative aspect-[16/10] bg-zinc-900/40 rounded-[20px] overflow-hidden p-6 border border-white/5 shadow-3xl backdrop-blur-2xl group transition-all duration-[2s]">
-                   <div className="relative w-full h-full rounded-[20px] overflow-hidden">
-                     <Image
-                       src={project.image}
-                       alt={project.title}
-                       fill
-                       className="object-cover transition-transform duration-[2.5s] group-hover:scale-110 grayscale group-hover:grayscale-0"
-                     />
-                     <div className="absolute inset-0 bg-black/40 group-hover:bg-transparent transition-all duration-[1.5s]" />
-                   </div>
-                   
-                   <div className="absolute bottom-10 left-10 w-12 h-12 rounded-full bg-zinc-950/90 border border-white/10 flex items-center justify-center translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-500 shadow-3xl backdrop-blur-xl">
-                     <ArrowUpRight size={18} className="text-white" />
-                   </div>
-                 </div>
+                  <div className="relative aspect-[16/10] bg-card rounded-[20px] overflow-hidden p-6 border border-border shadow-[0_30px_60px_rgba(37,99,235,0.08)] backdrop-blur-2xl group transition-all duration-[2s] hover:shadow-[0_40px_80px_rgba(37,99,235,0.12)]">
+                    <div className="relative w-full h-full rounded-[14px] overflow-hidden">
+                      <Image
+                        src={project.image}
+                        alt={project.title}
+                        fill
+                        className="object-cover transition-transform duration-[2.5s] group-hover:scale-110 grayscale group-hover:grayscale-0"
+                      />
+                      <div className="absolute inset-0 bg-background/20 group-hover:bg-transparent transition-all duration-[1.5s]" />
+                    </div>
+                    
+                    <div className="absolute bottom-10 left-10 w-12 h-12 rounded-full bg-primary/90 border border-white/10 flex items-center justify-center translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-500 shadow-3xl backdrop-blur-xl">
+                      <ArrowUpRight size={18} className="text-primary-foreground" />
+                    </div>
+                  </div>
                </Link>
              </motion.div>
            ))}

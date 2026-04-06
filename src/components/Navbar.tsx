@@ -33,15 +33,15 @@ export function Navbar() {
         flex items-center gap-8
         px-6 py-2 rounded-full border transition-all duration-500
         ${scrolled 
-          ? "bg-black/60 backdrop-blur-3xl border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.5)]" 
-          : "bg-zinc-900/40 backdrop-blur-2xl border-white/5"}
+          ? "bg-white/80 backdrop-blur-3xl border-border/50 shadow-[0_8px_32px_rgba(37,99,235,0.08)]" 
+          : "bg-white/50 backdrop-blur-2xl border-border/20"}
       `}>
         {/* Logo Section */}
         <Link href="/" className="flex items-center gap-2 group cursor-pointer transition-colors duration-300">
-            <div className="p-1 px-1.5 rounded-full border border-white/10 flex items-center justify-center bg-zinc-900 group-hover:bg-white/10 group-hover:border-white/20">
-              <Sparkle className="w-3.5 h-3.5 text-white" />
+            <div className="p-1 px-1.5 rounded-full border border-border/50 flex items-center justify-center bg-white group-hover:border-primary/30 group-hover:bg-primary/5 transition-all">
+              <Sparkle className="w-3.5 h-3.5 text-primary group-hover:scale-110 transition-transform" />
             </div>
-            <span className="text-xl font-bold tracking-tight text-white/90">Bharat</span>
+            <span className="text-xl font-bold tracking-tight text-foreground">Bharat</span>
         </Link>
 
         {/* Desktop Links */}
@@ -50,7 +50,7 @@ export function Navbar() {
             <Link
               key={link.name}
               href={link.href}
-              className="px-4 py-2 rounded-full text-[13px] font-bold text-zinc-400 hover:text-white transition-all uppercase tracking-tight"
+              className="px-4 py-2 rounded-full text-[13px] font-bold text-muted hover:text-primary hover:bg-primary/5 transition-all uppercase tracking-tight"
             >
               {link.name}
             </Link>
@@ -59,7 +59,7 @@ export function Navbar() {
 
         {/* Mobile toggle */}
         <button 
-            className="md:hidden p-2 text-zinc-400"
+            className="md:hidden p-2 text-muted hover:text-primary transition-colors"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
         >
             {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
@@ -72,14 +72,14 @@ export function Navbar() {
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="absolute top-full mt-4 left-0 right-0 min-w-[200px] bg-zinc-900/95 backdrop-blur-3xl border border-white/10 rounded-[32px] p-6 flex flex-col gap-4 md:hidden shadow-3xl"
+              className="absolute top-full mt-4 left-0 right-0 min-w-[200px] bg-white/95 backdrop-blur-3xl border border-border/50 rounded-[32px] p-6 flex flex-col gap-4 md:hidden shadow-xl"
             >
               {navLinks.map((link) => (
                 <Link
                   key={link.name}
                   href={link.href}
                   onClick={() => setMobileMenuOpen(false)}
-                  className="text-base font-bold text-zinc-400 hover:text-white px-4 py-2 rounded-xl transition-all uppercase tracking-widest border-l-2 border-transparent hover:border-white hover:bg-white/5"
+                  className="text-base font-bold text-muted hover:text-primary px-4 py-2 rounded-xl transition-all uppercase tracking-widest border-l-2 border-transparent hover:border-primary hover:bg-primary/5"
                 >
                   {link.name}
                 </Link>

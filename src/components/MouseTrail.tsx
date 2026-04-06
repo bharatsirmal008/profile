@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { motion, useSpring, useMotionValue } from "framer-motion";
+import { motion, useSpring, useMotionValue, AnimatePresence } from "framer-motion";
 
 export function MouseTrail() {
   const [isMounted, setIsMounted] = useState(false);
@@ -71,7 +71,7 @@ export function MouseTrail() {
 
   return (
     <div className="pointer-events-none fixed inset-0 z-[10000]">
-      {/* Deepest Glow (Slowest, Most Lag) */}
+      {/* Deepest Glow (Slowest, Most Lag) - Blue Tint */}
       <motion.div
         style={{
           x: x5,
@@ -79,10 +79,10 @@ export function MouseTrail() {
           translateX: "-50%",
           translateY: "-50%",
         }}
-        className="absolute h-48 w-48 rounded-full bg-white/[0.03] blur-3xl"
+        className="absolute h-48 w-48 rounded-full bg-primary/[0.03] blur-3xl"
       />
 
-      {/* Outer Blur Layer 3 */}
+      {/* Outer Blur Layer - Secondary Blue */}
       <motion.div
         style={{
           x: x4,
@@ -90,43 +90,52 @@ export function MouseTrail() {
           translateX: "-50%",
           translateY: "-50%",
         }}
-        className="absolute h-24 w-24 rounded-full bg-white/[0.05] blur-2xl"
+        className="absolute h-24 w-24 rounded-full bg-primary/[0.05] blur-2xl"
       />
 
-      {/* Layer 2 Ring */}
+      {/* Interactive Ring - Expanding on Hover */}
       <motion.div
         style={{
           x: x3,
           y: y3,
           translateX: "-50%",
           translateY: "-50%",
-          scale: isHovering ? 1.5 : 1,
+          scale: isHovering ? 2.5 : 1,
         }}
-        className="absolute h-12 w-12 rounded-full border border-white/10"
-      />
-
-      {/* Layer 1 Soft Glow */}
-      <motion.div
-        style={{
-          x: x2,
-          y: y2,
-          translateX: "-50%",
-          translateY: "-50%",
-          scale: isHovering ? 2 : 1,
+        animate={{
+          rotate: isHovering ? 360 : 0
         }}
-        className="absolute h-8 w-8 rounded-full bg-white/10 blur-[2px]"
-      />
+        transition={{ 
+          rotate: { duration: 10, repeat: Infinity, ease: "linear" }
+        }}
+        className="absolute h-10 w-10 flex items-center justify-center"
+      >
+        <div className="w-full h-full rounded-full border border-primary/20" />
+        {/* Decorative corner dots when hovering */}
+        <AnimatePresence>
+          {isHovering && (
+            <>
+              <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-primary/40 shadow-[0_0_10px_rgba(37,99,235,0.4)]" />
+              <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} className="absolute -bottom-1 -left-1 w-2 h-2 rounded-full bg-secondary/40 shadow-[0_0_10px_rgba(30,58,138,0.4)]" />
+            </>
+          )}
+        </AnimatePresence>
+      </motion.div>
 
-      {/* Leading Glow Point (Pure White, Stronger Shadow) */}
+      {/* Leading Glow Point */}
       <motion.div
         style={{
           x: x1,
           y: y1,
           translateX: "-50%",
           translateY: "-50%",
+          scale: isHovering ? 1.5 : 1,
         }}
-        className="absolute h-2.5 w-2.5 rounded-full bg-white shadow-[0_0_20px_4px_rgba(255,255,255,0.7)]"
-      />
+        className="absolute h-2.5 w-2.5 rounded-full bg-primary shadow-[0_0_15px_4px_rgba(37,99,235,0.4)] flex items-center justify-center"
+      >
+        <div className="w-1 h-1 rounded-full bg-white opacity-40" />
+      </motion.div>
     </div>
   );
 }
+

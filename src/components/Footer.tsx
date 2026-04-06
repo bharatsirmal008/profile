@@ -26,15 +26,15 @@ export function Footer() {
   ];
 
   return (
-    <div className="w-full bg-black pt-16 pb-6 px-6 md:px-12 lg:px-24 border-t border-white/5 overflow-hidden">
+    <div className="w-full bg-background pt-16 pb-6 px-6 md:px-12 lg:px-24 border-t border-border/50 overflow-hidden">
       <div className="max-w-7xl mx-auto space-y-10">
         {/* Top Row: Logo and Socials */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
           <div className="flex items-center gap-2 group cursor-pointer transition-colors duration-300">
-            <div className="p-1 px-1.5 rounded-full border border-white/10 flex items-center justify-center bg-zinc-900 group-hover:bg-white/10 group-hover:border-white/20">
-              <Sparkle className="w-4 h-4 text-white" />
+            <div className="p-1 px-1.5 rounded-full border border-border/50 flex items-center justify-center bg-white group-hover:border-primary/30 group-hover:bg-primary/5 transition-all">
+              <Sparkle className="w-4 h-4 text-primary" />
             </div>
-            <span className="text-2xl font-bold tracking-tight text-white/90">Bharat</span>
+            <span className="text-2xl font-bold tracking-tight text-foreground">Bharat</span>
           </div>
 
           <div className="flex items-center gap-6">
@@ -44,7 +44,7 @@ export function Footer() {
                 href={social.href} 
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-zinc-500 hover:text-white transition-all duration-300 hover:scale-110"
+                className="text-muted hover:text-primary transition-all duration-300 hover:scale-110"
               >
                 {social.icon}
               </a>
@@ -58,7 +58,7 @@ export function Footer() {
             <a 
               key={link.name} 
               href={link.href} 
-              className="text-zinc-500 font-bold hover:text-white transition-colors duration-300 tracking-tight"
+              className="text-muted font-bold hover:text-primary transition-colors duration-300 tracking-tight"
             >
               {link.name}
             </a>
@@ -66,8 +66,8 @@ export function Footer() {
         </div>
 
         {/* Bottom Row: Copyright and Credits */}
-        <div className="pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-          <div className="text-zinc-500 text-sm font-medium tracking-tight">
+        <div className="pt-8 border-t border-border/50 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+          <div className="text-muted text-sm font-medium tracking-tight">
             © {currentYear} Bharat Sirmal
           </div>
         </div>

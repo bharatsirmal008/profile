@@ -28,13 +28,13 @@ export function Hero() {
   relative min-h-screen flex flex-col justify-center
   px-4 sm:px-6 md:px-10 lg:px-16 xl:px-20
   py-20
-  bg-black overflow-hidden
+  bg-background overflow-hidden
 ">
       {/* Background Layer: Deep Glows & Shapes */}
       <div className="absolute inset-0 z-0 pointer-events-none">
         {/* Soft Background Glows */}
-        <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-blue-600/10 rounded-full blur-[120px] animate-pulse" />
-        <div className="absolute bottom-1/4 right-1/4 w-[600px] h-[600px] bg-purple-600/10 rounded-full blur-[150px] animate-pulse transition-all duration-[10s]" />
+        <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px] animate-pulse" />
+        <div className="absolute bottom-1/4 right-1/4 w-[600px] h-[600px] bg-secondary/5 rounded-full blur-[150px] animate-pulse transition-all duration-[10s]" />
         
         {/* Abstract Floating Sphere (Glassy) */}
         <motion.div 
@@ -44,7 +44,7 @@ export function Hero() {
             scale: [1, 1.05, 1]
           }}
           transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
-          className="absolute top-1/2 left-3/4 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] border border-white/[0.05] rounded-full bg-gradient-to-br from-white/[0.02] to-transparent backdrop-blur-[2px] shadow-[inset_0_0_80px_rgba(255,255,255,0.02)]"
+          className="absolute top-1/2 left-3/4 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] border border-black/[0.03] rounded-full bg-gradient-to-br from-black/[0.01] to-transparent backdrop-blur-[1px] shadow-[inset_0_0_80px_rgba(0,0,0,0.01)]"
         />
 
         {isMounted && (
@@ -54,14 +54,14 @@ export function Hero() {
             loop
             playsInline
             preload="auto"
-            className="absolute inset-0 w-full h-full object-cover opacity-20 mix-blend-screen"
+            className="absolute inset-0 w-full h-full object-cover opacity-5 mix-blend-multiply"
           >
             <source src="/bg_video.mp4" type="video/mp4" />
           </video>
         )}
         
         {/* Vignette Overlay */}
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,black_80%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,white_80%)]" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center relative z-10 w-full max-w-7xl mx-auto">
@@ -73,9 +73,9 @@ export function Hero() {
             transition={{ duration: 0.6 }}
             className="mb-8"
           >
-            <span className="inline-flex items-center gap-2 px-6 py-2 rounded-full border border-white/5 bg-zinc-900/40 backdrop-blur-3xl text-[12px] font-bold text-white shadow-xl">
-              <span className="w-2 h-2 rounded-full border-2 border-white/20 flex items-center justify-center">
-                <span className="w-0.5 h-0.5 rounded-full bg-white" />
+            <span className="inline-flex items-center gap-2 px-6 py-2 rounded-full border border-border bg-white/40 backdrop-blur-3xl text-[12px] font-bold text-foreground shadow-sm">
+              <span className="w-2 h-2 rounded-full border-2 border-primary/20 flex items-center justify-center">
+                <span className="w-0.5 h-0.5 rounded-full bg-primary" />
               </span>
               Computer Science Engineering
             </span>
@@ -87,11 +87,11 @@ export function Hero() {
             transition={{ delay: 0.2, duration: 0.8 }}
             className="mb-8 w-full"
           >
-            <h1 className="text-4xl md:text-5xl lg:text-[70px] font-bold tracking-tight leading-[1] text-white flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-x-6 gap-y-4 whitespace-nowrap overflow-visible uppercase">
-              <span>Bharat</span> <span className="text-zinc-600 font-extralight tracking-widest">Sirmal</span>
+            <h1 className="text-4xl md:text-5xl lg:text-[70px] font-bold tracking-tight leading-[1] text-foreground flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-x-6 gap-y-4 whitespace-nowrap overflow-visible uppercase">
+              <span>Bharat</span> <span className="text-primary font-extralight tracking-widest">Sirmal</span>
               <div className="flex flex-col items-center gap-1.5 translate-y-2">
-                <div className="w-14 h-14 md:w-16 md:h-16 rounded-full border border-white/10 flex items-center justify-center bg-zinc-900/40 backdrop-blur-xl group cursor-pointer hover:bg-white/10 transition-all shadow-2xl">
-                  <ArrowUpRight className="w-6 h-6 md:w-8 md:h-8 text-white group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                <div className="w-14 h-14 md:w-16 md:h-16 rounded-full border border-border flex items-center justify-center bg-white backdrop-blur-xl group cursor-pointer hover:bg-card transition-all shadow-xl">
+                  <ArrowUpRight className="w-6 h-6 md:w-8 md:h-8 text-primary group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
                 </div>
               </div>
             </h1>
@@ -101,7 +101,7 @@ export function Hero() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3, duration: 0.8 }}
-            className="text-lg md:text-xl text-zinc-400 font-medium leading-[1.6] max-w-2xl mb-12"
+            className="text-lg md:text-xl text-muted font-medium leading-[1.6] max-w-2xl mb-12"
           >
            I’m a Computer Science Engineer dedicated to creating innovative, efficient, and scalable solutions through code and technology!
           </motion.p>
@@ -144,13 +144,13 @@ export function Hero() {
                 rotate: { duration: 10, repeat: Infinity, ease: "easeInOut" },
                 opacity: { duration: 1 }
               }}
-              className="absolute top-[10%] left-[15%] w-[320px] bg-[#0d0d0f]/80 backdrop-blur-3xl border border-white/5 p-10 rounded-[45px] shadow-[0_40px_100px_rgba(0,0,0,0.8)] z-10 cursor-default"
+              className="absolute top-[10%] left-[15%] w-[320px] bg-white/90 backdrop-blur-3xl border border-border/50 p-10 rounded-[20px] shadow-[0_30px_60px_rgba(37,99,235,0.12)] z-10 cursor-default"
             >
-              <p className="text-white text-xl font-bold leading-relaxed mb-8">
+              <p className="text-foreground text-xl font-bold leading-relaxed mb-8">
                 " ऐनामा गएर आफनो मुख हेरेर छाति फुलाएर भनछु जिउदै छु म प्रयास जारि छ दुनियाँ को नजर मा हारेहुला तर म भित्रको म कहिले हारेन! "
               </p>
               <div className="flex justify-end pr-2">
-                <span className="text-zinc-600 text-[10px] font-black uppercase tracking-[0.3em]">—psycho</span>
+                <span className="text-muted text-[10px] font-black uppercase tracking-[0.3em]">—psycho</span>
               </div>
             </motion.div>
 
@@ -170,13 +170,13 @@ export function Hero() {
                 opacity: { duration: 1 },
                 delay: 0.3
               }}
-              className="absolute top-[40%] left-[40%] w-[340px] bg-[#0d0d0f]/80 backdrop-blur-3xl border border-white/5 p-10 rounded-[45px] shadow-[0_60px_120px_rgba(0,0,0,0.9)] z-20 cursor-default"
+              className="absolute top-[40%] left-[40%] w-[340px] bg-white/90 backdrop-blur-3xl border border-border/50 p-10 rounded-[20px] shadow-[0_40px_80px_rgba(37,99,235,0.15)] z-20 cursor-default"
             >
-              <p className="text-white text-lg font-bold leading-relaxed mb-8">
+              <p className="text-foreground text-lg font-bold leading-relaxed mb-8">
                 " I stand before the mirror, hold my head high, and remind myself—I’m still alive, still trying. The world may see me as defeated, but the person within me has never lost. "
               </p>
               <div className="flex justify-end pr-2">
-                <span className="text-zinc-600 text-[10px] font-black uppercase tracking-[0.3em]">—psycho</span>
+                <span className="text-muted text-[10px] font-black uppercase tracking-[0.3em]">—psycho</span>
               </div>
             </motion.div>
 
@@ -203,7 +203,7 @@ export function Hero() {
         transition={{ duration: 2, repeat: Infinity }}
         className="absolute bottom-10 left-1/2 -translate-x-1/2 opacity-30 px-4 py-8"
       >
-        <div className="w-px h-16 bg-gradient-to-b from-white to-transparent" />
+        <div className="w-px h-16 bg-gradient-to-b from-primary to-transparent" />
       </motion.div>
     </section>
   );
