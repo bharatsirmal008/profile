@@ -3,7 +3,6 @@
 import React from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
-import Link from "next/link";
 import { PremiumButton } from "./PremiumButton";
 
 export function CTA() {
@@ -24,12 +23,12 @@ export function CTA() {
                     <div className="w-2 h-2 rounded-full border border-border flex items-center justify-center">
                         <div className="w-0.5 h-0.5 rounded-full bg-primary" />
                     </div>
-                    Let's Connect
+                    Let&apos;s Connect
                </div>
                
                {/* 3. Heading & Font weights (Matched to Screenshot) */}
                <h2 className="text-[64px] md:text-[84px] leading-[0.9] tracking-tighter text-foreground">
-                  <span className="font-bold">Let's Grow</span> <span className="text-primary font-extralight block">Together</span>
+                  <span className="font-bold">Let&apos;s Grow</span> <span className="text-primary font-extralight block">Together</span>
                </h2>
              </div>
 
@@ -62,10 +61,10 @@ export function CTA() {
 
              {/* 5. Buttons Row: Dark & Shiny White (Matched to Screenshot) */}
              <div className="flex flex-wrap items-center gap-5 pt-8">
-                <PremiumButton href="/projects" variant="secondary">
+                <PremiumButton href="/#projects" variant="secondary">
                   See All Projects
                 </PremiumButton>
-                <PremiumButton href="/contact" variant="primary">
+                <PremiumButton href="/#contact" variant="primary">
                   Contact Now
                 </PremiumButton>
              </div>

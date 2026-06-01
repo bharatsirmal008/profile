@@ -14,8 +14,8 @@ export function Footer() {
 
   const navLinks = [
     { name: "About", href: "/#about" },
-    { name: "Projects", href: "/projects" },
-    { name: "Contact", href: "/contact" },
+    { name: "Projects", href: "/#projects" },
+    { name: "Contact", href: "/#contact" },
   ];
 
   const socialLinks = [
@@ -34,7 +34,7 @@ export function Footer() {
             <div className="p-1 px-1.5 rounded-full border border-border/50 flex items-center justify-center bg-white group-hover:border-primary/30 group-hover:bg-primary/5 transition-all">
               <Sparkle className="w-4 h-4 text-primary" />
             </div>
-            <span className="text-2xl font-bold tracking-tight text-foreground">Bharat</span>
+            <span className="text-2xl font-bold tracking-tight text-foreground">BHARAT.</span>
           </div>
 
           <div className="flex items-center gap-6">
@@ -66,9 +66,9 @@ export function Footer() {
         </div>
 
         {/* Bottom Row: Copyright and Credits */}
-        <div className="pt-8 border-t border-border/50 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-          <div className="text-muted text-sm font-medium tracking-tight">
-            © {currentYear} Bharat Sirmal
+        <div className="pt-8 border-t border-border/50 flex justify-center items-center w-full">
+          <div className="text-muted text-sm font-medium tracking-tight text-center">
+            © 2026 Bharat Sirmal
           </div>
         </div>
       </div>

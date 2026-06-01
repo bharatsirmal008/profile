@@ -1,210 +1,84 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { motion } from "framer-motion";
-import { ArrowUpRight } from "lucide-react";
-import { PremiumButton } from "./PremiumButton";
+import { motion, useScroll, useTransform } from "framer-motion";
+import Image from "next/image";
 
 export function Hero() {
-  const [isMounted, setIsMounted] = useState(false);
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-
-  useEffect(() => {
-    setIsMounted(true);
-    
-    const handleMouseMove = (e: MouseEvent) => {
-      setMousePosition({
-        x: (e.clientX / window.innerWidth - 0.5) * 40,
-        y: (e.clientY / window.innerHeight - 0.5) * 40,
-      });
-    };
-    
-    window.addEventListener("mousemove", handleMouseMove);
-    return () => window.removeEventListener("mousemove", handleMouseMove);
-  }, []);
+  // Parallax scroll effects
+  const { scrollY } = useScroll();
+  const backgroundY = useTransform(scrollY, [0, 1000], ["0%", "20%"]);
+  const textY = useTransform(scrollY, [0, 1000], ["0%", "50%"]);
+  const cutoutY = useTransform(scrollY, [0, 1000], ["0%", "-10%"]);
 
   return (
-   <section className="
-  relative min-h-screen flex flex-col justify-center
-  px-4 sm:px-6 md:px-10 lg:px-16 xl:px-20
-  py-20
-  bg-background overflow-hidden
-">
-      {/* Background Layer: Deep Glows & Shapes */}
-      <div className="absolute inset-0 z-0 pointer-events-none">
-        {/* Soft Background Glows */}
-        <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px] animate-pulse" />
-        <div className="absolute bottom-1/4 right-1/4 w-[600px] h-[600px] bg-secondary/5 rounded-full blur-[150px] animate-pulse transition-all duration-[10s]" />
-        
-        {/* Abstract Floating Sphere (Glassy) */}
-        <motion.div 
-          animate={{ 
-            y: [0, -40, 0],
-            rotate: [0, 360],
-            scale: [1, 1.05, 1]
-          }}
-          transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
-          className="absolute top-1/2 left-3/4 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] border border-black/[0.03] rounded-full bg-gradient-to-br from-black/[0.01] to-transparent backdrop-blur-[1px] shadow-[inset_0_0_80px_rgba(0,0,0,0.01)]"
-        />
-
-        {isMounted && (
-          <video
-            autoPlay
-            muted
-            loop
-            playsInline
-            preload="auto"
-            className="absolute inset-0 w-full h-full object-cover opacity-5 mix-blend-multiply"
-          >
-            <source src="/bg_video.mp4" type="video/mp4" />
-          </video>
-        )}
-        
-        {/* Vignette Overlay */}
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,white_80%)]" />
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center relative z-10 w-full max-w-7xl mx-auto">
-        {/* Left Side: Content (Center on Mobile, Left on Desktop) */}
-        <div className="flex flex-col lg:items-start items-center lg:text-left text-center w-full">
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6 }}
-            className="mb-8"
-          >
-            <span className="inline-flex items-center gap-2 px-6 py-2 rounded-full border border-border bg-white/40 backdrop-blur-3xl text-[12px] font-bold text-foreground shadow-sm">
-              <span className="w-2 h-2 rounded-full border-2 border-primary/20 flex items-center justify-center">
-                <span className="w-0.5 h-0.5 rounded-full bg-primary" />
-              </span>
-              Computer Science Engineering
-            </span>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2, duration: 0.8 }}
-            className="mb-8 w-full"
-          >
-            <h1 className="text-4xl md:text-5xl lg:text-[70px] font-bold tracking-tight leading-[1] text-foreground flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-x-6 gap-y-4 whitespace-nowrap overflow-visible uppercase">
-              <span>Bharat</span> <span className="text-primary font-extralight tracking-widest">Sirmal</span>
-              <div className="flex flex-col items-center gap-1.5 translate-y-2">
-                <div className="w-14 h-14 md:w-16 md:h-16 rounded-full border border-border flex items-center justify-center bg-white backdrop-blur-xl group cursor-pointer hover:bg-card transition-all shadow-xl">
-                  <ArrowUpRight className="w-6 h-6 md:w-8 md:h-8 text-primary group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-                </div>
-              </div>
-            </h1>
-          </motion.div>
-
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3, duration: 0.8 }}
-            className="text-lg md:text-xl text-muted font-medium leading-[1.6] max-w-2xl mb-12"
-          >
-           I’m a Computer Science Engineer dedicated to creating innovative, efficient, and scalable solutions through code and technology!
-          </motion.p>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4, duration: 0.8 }}
-            className="flex flex-wrap items-center justify-center lg:justify-start gap-5"
-          >
-            <PremiumButton href="/projects" variant="secondary">
-              See All Projects
-            </PremiumButton>
-            <PremiumButton href="/contact" variant="primary">
-              Contact Now
-            </PremiumButton>
-          </motion.div>
-
-        </div>
-
-        {/* Right Side: Floating Testimonials & Interaction */}
-        <div className="relative h-[600px] w-full lg:flex items-center justify-end hidden">
-          <div className="relative w-full h-full">
-            
-            {/* Background Glow Dot matching screenshot */}
-            <div className="absolute top-[5%] left-[10%] w-2 h-2 rounded-full bg-white shadow-[0_0_20px_white] animate-pulse" />
-
-            {/* Top Card (Nepali Quote) */}
-            <motion.div
-              style={{
-                x: mousePosition.x * 0.5,
-                y: mousePosition.y * 0.5,
-              }}
-              initial={{ opacity: 0, scale: 0.9, y: 40, rotate: -6 }}
-              whileInView={{ opacity: 1, rotate: -8, y: 0 }}
-              animate={{ 
-                rotate: [-8, -7, -8]
-              }}
-              transition={{ 
-                rotate: { duration: 10, repeat: Infinity, ease: "easeInOut" },
-                opacity: { duration: 1 }
-              }}
-              className="absolute top-[10%] left-[15%] w-[320px] bg-white/90 backdrop-blur-3xl border border-border/50 p-10 rounded-[20px] shadow-[0_30px_60px_rgba(37,99,235,0.12)] z-10 cursor-default"
-            >
-              <p className="text-foreground text-xl font-bold leading-relaxed mb-8">
-                " ऐनामा गएर आफनो मुख हेरेर छाति फुलाएर भनछु जिउदै छु म प्रयास जारि छ दुनियाँ को नजर मा हारेहुला तर म भित्रको म कहिले हारेन! "
-              </p>
-              <div className="flex justify-end pr-2">
-                <span className="text-muted text-[10px] font-black uppercase tracking-[0.3em]">—psycho</span>
-              </div>
-            </motion.div>
-
-            {/* Bottom Card (English Quote) */}
-            <motion.div
-               style={{
-                x: mousePosition.x * -0.8,
-                y: mousePosition.y * -0.8,
-              }}
-              initial={{ opacity: 0, scale: 0.9, y: 80, rotate: 4 }}
-              whileInView={{ opacity: 1, rotate: 6, y: 0 }}
-              animate={{ 
-                rotate: [6, 7, 6]
-              }}
-              transition={{ 
-                rotate: { duration: 11, repeat: Infinity, ease: "easeInOut" },
-                opacity: { duration: 1 },
-                delay: 0.3
-              }}
-              className="absolute top-[40%] left-[40%] w-[340px] bg-white/90 backdrop-blur-3xl border border-border/50 p-10 rounded-[20px] shadow-[0_40px_80px_rgba(37,99,235,0.15)] z-20 cursor-default"
-            >
-              <p className="text-foreground text-lg font-bold leading-relaxed mb-8">
-                " I stand before the mirror, hold my head high, and remind myself—I’m still alive, still trying. The world may see me as defeated, but the person within me has never lost. "
-              </p>
-              <div className="flex justify-end pr-2">
-                <span className="text-muted text-[10px] font-black uppercase tracking-[0.3em]">—psycho</span>
-              </div>
-            </motion.div>
-
-            {/* Subtle floating cursor icons for aesthetic 'moving motion' */}
-            <motion.div 
-               animate={{ x: mousePosition.x * 0.2, y: mousePosition.y * 0.2 }}
-               className="absolute top-[40%] left-[32%] text-white/20 -rotate-12"
-            >
-               <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M10.07 2.42L3.29 17.43c-.34.76.43 1.53 1.19 1.19l15.01-6.78c.88-.4.76-1.67-.18-1.9L4.82 8.35c-.83-.16-1-1.3-.23-1.63L18.41 1.07c.88-.4.76-1.67-.18-1.9L4.82 1.35z" className="opacity-0 invisible" /><path d="M3.7 1.8l1.4 17.4c.1 1.2 1.5 1.7 2.4.8l5-5 5.2 9.6c.4.8 1.4 1.1 2.2.7l1.7-.9c.8-.4 1.1-1.4.7-2.2l-5.2-9.6 6.8-.7c1.2-.1 1.7-1.5.8-2.4L5.3.3c-.9-.9-1.7-.1-1.6 1.5z" /></svg>
-            </motion.div>
-            <motion.div 
-               animate={{ x: mousePosition.x * -0.3, y: mousePosition.y * -0.3 }}
-               className="absolute top-[28%] left-[48%] text-white/10 rotate-12"
-            >
-               <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M3.7 1.8l1.4 17.4c.1 1.2 1.5 1.7 2.4.8l5-5 5.2 9.6c.4.8 1.4 1.1 2.2.7l1.7-.9c.8-.4 1.1-1.4.7-2.2l-5.2-9.6 6.8-.7c1.2-.1 1.7-1.5.8-2.4L5.3.3c-.9-.9-1.7-.1-1.6 1.5z" /></svg>
-            </motion.div>
-          </div>
-        </div>
-      </div>
-
-      {/* Hero Bottom Arrow (Premium Line) */}
+    <section className="relative h-[100dvh] w-full flex flex-col justify-end overflow-hidden bg-black text-white">
+      
+      {/* 1. Background Mountain Layer */}
       <motion.div 
-        animate={{ y: [0, 10, 0] }}
-        transition={{ duration: 2, repeat: Infinity }}
-        className="absolute bottom-10 left-1/2 -translate-x-1/2 opacity-30 px-4 py-8"
+        className="absolute inset-0 z-0 origin-bottom"
+        style={{ y: backgroundY }}
+        initial={{ scale: 1.1, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ duration: 1.5, ease: "easeOut" }}
       >
-        <div className="w-px h-16 bg-gradient-to-b from-primary to-transparent" />
+        <Image
+          src="/hero-mountains.jpg"
+          alt="Mountains Background"
+          fill
+          priority
+          className="object-cover object-bottom"
+        />
+        {/* Gradient overlay to blend the mountains smoothly into the background */}
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent"></div>
+        <div className="absolute inset-0 bg-black/10"></div>
       </motion.div>
+
+      {/* 2. Typography Layer (Behind the cutout) */}
+      <motion.div 
+        className="absolute inset-0 z-10 pointer-events-none flex flex-col items-center justify-center pt-[5vh] md:pt-[2vh]"
+        style={{ y: textY }}
+      >
+        <motion.div 
+          className="relative flex flex-col items-center justify-center leading-[0.8] tracking-tighter w-full max-w-[90vw] mx-auto py-12"
+          initial={{ opacity: 0, y: 50 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 1.2, ease: "easeOut", delay: 0.2 }}
+        >
+          {/* Corner Brackets framing the text */}
+          <div className="absolute top-0 left-0 w-6 h-6 md:w-10 md:h-10 border-t-[3px] border-l-[3px] border-white/50" />
+          <div className="absolute top-0 right-0 w-6 h-6 md:w-10 md:h-10 border-t-[3px] border-r-[3px] border-white/50" />
+          <div className="absolute bottom-0 left-0 w-6 h-6 md:w-10 md:h-10 border-b-[3px] border-l-[3px] border-white/50" />
+          <div className="absolute bottom-0 right-0 w-6 h-6 md:w-10 md:h-10 border-b-[3px] border-r-[3px] border-white/50" />
+
+          <h1 className="text-[18vw] md:text-[16vw] xl:text-[200px] font-black font-sans text-white uppercase text-center drop-shadow-[0_10px_30px_rgba(0,0,0,0.5)]">
+            BHARAT
+          </h1>
+          <h1 className="text-[18vw] md:text-[16vw] xl:text-[200px] font-black font-sans text-transparent bg-clip-text bg-gradient-to-b from-white to-white/40 uppercase text-center drop-shadow-[0_10px_30px_rgba(0,0,0,0.5)]">
+            SIRMAL
+          </h1>
+        </motion.div>
+      </motion.div>
+
+      {/* 3. Cutout Image Layer (In front of Typography) */}
+      <motion.div 
+        className="absolute bottom-0 left-1/2 -translate-x-1/2 z-20 w-[90%] md:w-[70%] lg:w-[60%] xl:w-[50%] h-[80vh] md:h-[80vh] pointer-events-none"
+        style={{ y: cutoutY }}
+        initial={{ y: 200, opacity: 0, scale: 0.9 }}
+        animate={{ y: 0, opacity: 1, scale: 1 }}
+        transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1], delay: 0.5 }}
+      >
+        <Image
+          src="/image.PNG"
+          alt="Bharat Sirmal"
+          fill
+          priority
+          className="object-contain object-bottom drop-shadow-[0_-20px_50px_rgba(0,0,0,0.4)]"
+        />
+      </motion.div>
+
+      {/* 4. Bottom Gradient Fade to blend into next section */}
+      <div className="absolute bottom-0 left-0 w-full h-16 md:h-24 bg-gradient-to-t from-background via-background/80 to-transparent z-30 pointer-events-none" />
     </section>
   );
 }

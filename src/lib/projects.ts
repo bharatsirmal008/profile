@@ -10,6 +10,7 @@ export interface Project {
   client: string;
   serviceProvided: string;
   liveLink?: string;
+  techStack: string[];
   goal: {
     text: string;
     image: string;
@@ -37,6 +38,7 @@ export const projects: Project[] = [
     client: "gaming",
     serviceProvided: "Web Development, UI Design",
     liveLink: "https://eceb-frontend.vercel.app/",
+    techStack: ["Next.js", "React", "Tailwind CSS", "Firebase", "Framer Motion"],
     goal: {
       text: "To build a secure and lightning-fast marketplace that focuses on both conversion and customer trust through integrated authentication and an easy-access service model for hardware support.",
       image: "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=2400"
@@ -62,6 +64,7 @@ export const projects: Project[] = [
     client: "YAOP Association",
     serviceProvided: "Community Platform, UI/UX Design",
     liveLink: "https://yaop.vercel.app/",
+    techStack: ["React", "Node.js", "Express", "MongoDB", "Tailwind CSS"],
     goal: {
       text: "To create a centralized digital hub that facilitates scholarship applications, volunteer coordination, and community news for the youth of Purbichauki.",
       image: "https://images.unsplash.com/photo-1542810634-71277d95dcbb?q=80&w=2400"

@@ -21,6 +21,13 @@
   --color-card: var(--card);
   --color-muted: var(--muted);
   --color-border: var(--border);
+  
+  --animate-marquee: marquee 30s linear infinite;
+
+  @keyframes marquee {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
 }
 
 @layer base {

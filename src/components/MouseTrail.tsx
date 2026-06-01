@@ -22,8 +22,7 @@ export function MouseTrail() {
   const x1 = useSpring(mouseX, spring1);
   const y1 = useSpring(mouseY, spring1);
   
-  const x2 = useSpring(mouseX, spring2);
-  const y2 = useSpring(mouseY, spring2);
+
   
   const x3 = useSpring(mouseX, spring3);
   const y3 = useSpring(mouseY, spring3);
@@ -36,7 +35,9 @@ export function MouseTrail() {
 
   useEffect(() => {
     setIsMounted(true);
-    
+  }, []);
+
+  useEffect(() => {
     const checkMobile = () => {
       // Hide on touch devices or small screens
       const isTouch = window.matchMedia("(pointer: coarse)").matches;

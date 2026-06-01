@@ -1,9 +1,9 @@
 import { Navbar } from "@/components/Navbar";
 import { Hero } from "@/components/Hero";
-import { ProfileAndExperience } from "@/components/ProfileExperience";
-import { Process } from "@/components/Process";
+import { About } from "@/components/About";
+import { SkillsMarquee } from "@/components/SkillsMarquee";
 import { Projects } from "@/components/Projects";
-import { CTA } from "@/components/CTA";
+import { Contact } from "@/components/Contact";
 import { Footer } from "@/components/Footer";
 
 export default function Home() {
@@ -14,9 +14,10 @@ export default function Home() {
 
       <Navbar />
       <Hero />
-      <ProfileAndExperience />
-      <Process />
+      <About />
+      <SkillsMarquee />
       <Projects />
+      <Contact />
       <Footer />
     </main>
   );

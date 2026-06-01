@@ -5,7 +5,6 @@ import { motion } from "framer-motion";
 import { 
   Pointer, 
   ListTodo, 
-  Sparkle, 
   Rocket,
   Wand
 } from "lucide-react";
@@ -128,10 +127,10 @@ export function Process() {
            </div>
 
            <div className="flex items-center gap-3">
-              <Link href="/projects" className="px-6 py-4 rounded-full text-[10px] font-bold text-muted uppercase tracking-widest hover:text-foreground transition-all">
+              <Link href="/#projects" className="px-6 py-4 rounded-full text-[10px] font-bold text-muted uppercase tracking-widest hover:text-foreground transition-all">
                  See All Projects
               </Link>
-              <Link href="/contact" className="px-8 py-4 rounded-[20px] bg-primary text-white font-black uppercase tracking-widest text-[10px] shadow-xl hover:bg-primary/90 transition-all active:scale-95">
+              <Link href="/#contact" className="px-8 py-4 rounded-[20px] bg-primary text-white font-black uppercase tracking-widest text-[10px] shadow-xl hover:bg-primary/90 transition-all active:scale-95">
                  Contact Now
               </Link>
            </div>
