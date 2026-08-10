@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useRef, useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, type Variants } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
 import { MousePointer2, PenTool, Box, ArrowRight, Phone, MessageCircle, Compass, Mail, X, Minus, Maximize2, UserPlus, Linkedin, Twitter, Instagram } from "lucide-react";
@@ -433,7 +433,7 @@ function DraggableWindow({
 // Base heights (%) approximating the reference design — soundwave/valley shape
 const BAR_HEIGHTS = [51, 37, 24, 21, 20, 21, 24, 33, 46, 51];
 
-const barVariants = {
+const barVariants: Variants = {
   animate: (i: number) => ({
     scaleY: [1, 1.08, 1],
     transition: {
