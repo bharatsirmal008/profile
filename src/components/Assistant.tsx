@@ -127,7 +127,7 @@ export function Assistant() {
     setIsLoading(true);
 
     try {
-      const response = await fetch("http://127.0.0.1:8001/ask", {
+      const response = await fetch("https://personal-ai-assistant-production-e4a6.up.railway.app/ask", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
