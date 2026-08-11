@@ -688,24 +688,27 @@ export function Assistant() {
          BACKEND
       ------------------------------------------------------ */
 
-      const response = await fetch("http://127.0.0.1:8001/ask", {
-        method: "POST",
+      const response = await fetch(
+        "https://personal-ai-assistant-production-e0db.up.railway.app/ask",
+        {
+          method: "POST",
 
-        headers: {
-          "Content-Type": "application/json",
+          headers: {
+            "Content-Type": "application/json",
+          },
+
+          body: JSON.stringify({
+            question: text,
+
+            /*
+             * Backend can ignore this for now.
+             * We send it so later you can
+             * support special voice handling.
+             */
+            voice: fromVoice,
+          }),
         },
-
-        body: JSON.stringify({
-          question: text,
-
-          /*
-           * Backend can ignore this for now.
-           * We send it so later you can
-           * support special voice handling.
-           */
-          voice: fromVoice,
-        }),
-      });
+      );
 
       if (!response.ok) {
         throw new Error(`Backend error: ${response.status}`);
