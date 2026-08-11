@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { CheckCircle2, AlertCircle, Loader2, Instagram, Twitter, Phone, Mail, Linkedin } from "lucide-react";
+import { CheckCircle2, AlertCircle, Loader2, Instagram, Github, Phone, Mail, Linkedin } from "lucide-react";
 
 export function Contact() {
    const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
@@ -44,27 +44,10 @@ export function Contact() {
           {/* Info */}
           <div>
             <h1 className="text-3xl md:text-4xl font-semibold text-gray-900 mb-1 tracking-tight">Bharat Sirmal</h1>
-            <h2 className="text-lg text-gray-500 font-medium">Computer Science Student <span className="text-gray-300 mx-1">|</span> Full Stack Developer</h2>
+            <h2 className="text-lg text-gray-500 font-medium">Computer Science Student <span className="text-gray-300 mx-1">|</span> Let's Connect</h2>
           </div>
 
-          {/* Social Icons */}
-          <div className="flex items-center gap-3">
-            {[
-              { Icon: Instagram, href: "#" },
-              { Icon: Twitter, href: "#" },
-              { Icon: Phone, href: "#" },
-              { Icon: Mail, href: "#" },
-              { Icon: Linkedin, href: "#" },
-            ].map((social, i) => (
-              <a 
-                key={i} 
-                href={social.href} 
-                className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-700 hover:bg-gray-200 hover:text-gray-900 transition-colors"
-              >
-                <social.Icon className="w-[18px] h-[18px]" strokeWidth={2} />
-              </a>
-            ))}
-          </div>
+
         </div>
 
         {/* Form Section */}

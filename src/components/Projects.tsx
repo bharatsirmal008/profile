@@ -24,7 +24,12 @@ export function Projects({ onClose, onMinimize, onMaximize }: ProjectsProps = {}
       
       {/* Mobile Header (visible only on small screens) */}
       <div className="md:hidden flex items-center justify-between p-4 border-b border-gray-200 bg-white z-20">
-        <span className="font-semibold text-gray-900">Projects</span>
+        <div className="flex items-center gap-3">
+          <button onClick={onClose} className="p-1.5 -ml-1.5 text-gray-600 hover:text-gray-900 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors">
+            <Home className="w-[18px] h-[18px]" />
+          </button>
+          <span className="font-semibold text-gray-900">Projects</span>
+        </div>
         <button 
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           className="p-2 -mr-2 text-gray-600 hover:text-gray-900"

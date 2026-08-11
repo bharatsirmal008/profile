@@ -15,9 +15,9 @@ export function Resume() {
           <div className="flex flex-wrap items-center gap-3 text-[15px] font-medium text-gray-500">
             <a href="mailto:sirmalbharat99@gmail.com" className="hover:text-gray-900 transition-colors">sirmalbharat99@gmail.com</a>
             <span className="text-gray-300">•</span>
-            <a href="#" className="hover:text-gray-900 transition-colors">LinkedIn</a>
+            <a href="https://www.linkedin.com/in/bharat-sirmal/" target="_blank" rel="noopener noreferrer" className="hover:text-gray-900 transition-colors">LinkedIn</a>
             <span className="text-gray-300">•</span>
-            <a href="#" className="hover:text-gray-900 transition-colors">GitHub</a>
+            <a href="https://github.com/bharatsirmal008" target="_blank" rel="noopener noreferrer" className="hover:text-gray-900 transition-colors">GitHub</a>
             <span className="text-gray-300">•</span>
             <a href="#" className="hover:text-gray-900 transition-colors">Portfolio</a>
             <span className="text-gray-300">•</span>
