@@ -52,7 +52,7 @@ type SpeechRecognitionInstance = {
 type SpeechRecognitionConstructor = new () => SpeechRecognitionInstance;
 
 /* ============================================================
-   VOICE CONVERSATION STATE
+   VOICE THINKING STATE
 ============================================================ */
 
 function VoiceThinkingState({
@@ -67,6 +67,10 @@ function VoiceThinkingState({
   onClose: () => void;
 }) {
   const sphereRef = useRef<HTMLDivElement>(null);
+
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
+
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (!sphereRef.current) return;
@@ -108,7 +112,6 @@ function VoiceThinkingState({
         const b = 255;
 
         dot.style.position = "absolute";
-
         dot.style.top = "50%";
         dot.style.left = "50%";
 
@@ -130,23 +133,27 @@ function VoiceThinkingState({
     }
   }, []);
 
-  // Toast feedback whenever the mic/stop button is tapped, mirroring the
-  // reference design's "Starting Bharat AI…" bubble.
-  const [toastMsg, setToastMsg] = useState<string | null>(null);
-  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
   useEffect(() => {
     setToastMsg("Starting Bharat AI…");
-    toastTimerRef.current = setTimeout(() => setToastMsg(null), 2200);
+
+    toastTimerRef.current = setTimeout(() => {
+      setToastMsg(null);
+    }, 2200);
 
     return () => {
-      if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+      if (toastTimerRef.current) {
+        clearTimeout(toastTimerRef.current);
+      }
     };
   }, []);
 
   const handleEndTap = () => {
-    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    if (toastTimerRef.current) {
+      clearTimeout(toastTimerRef.current);
+    }
+
     setToastMsg("Ending conversation…");
+
     toastTimerRef.current = setTimeout(() => {
       setToastMsg(null);
       onClose();
@@ -229,13 +236,24 @@ function VoiceThinkingState({
           height: 7px;
           border-radius: 50%;
           background: #8b7bff;
-          box-shadow: 0 0 8px 2px rgba(139,123,255,0.7);
-          animation: voice-dot-pulse 1.6s ease-in-out infinite;
+          box-shadow:
+            0 0 8px 2px
+            rgba(139,123,255,0.7);
+          animation:
+            voice-dot-pulse
+            1.6s ease-in-out infinite;
         }
 
         @keyframes voice-dot-pulse {
-          0%, 100% { opacity: 1; transform: scale(1); }
-          50% { opacity: 0.5; transform: scale(0.8); }
+          0%, 100% {
+            opacity: 1;
+            transform: scale(1);
+          }
+
+          50% {
+            opacity: 0.5;
+            transform: scale(0.8);
+          }
         }
 
         .voice-close {
@@ -306,14 +324,31 @@ function VoiceThinkingState({
           border-radius: 50%;
           border: none;
           cursor: pointer;
-          background: radial-gradient(circle at 35% 30%, #9b8bff, #6c56f5 60%, #4a37c9 100%);
-          box-shadow: 0 0 0 6px rgba(139,123,255,0.12), 0 8px 24px rgba(108,86,245,0.45);
-          transition: transform 0.15s ease, box-shadow 0.15s ease;
+          background:
+            radial-gradient(
+              circle at 35% 30%,
+              #9b8bff,
+              #6c56f5 60%,
+              #4a37c9 100%
+            );
+          box-shadow:
+            0 0 0 6px
+            rgba(139,123,255,0.12),
+            0 8px 24px
+            rgba(108,86,245,0.45);
+          transition:
+            transform 0.15s ease,
+            box-shadow 0.15s ease;
         }
 
         .voice-mic-btn:hover {
           transform: scale(1.05);
-          box-shadow: 0 0 0 8px rgba(139,123,255,0.18), 0 10px 28px rgba(108,86,245,0.55);
+
+          box-shadow:
+            0 0 0 8px
+            rgba(139,123,255,0.18),
+            0 10px 28px
+            rgba(108,86,245,0.55);
         }
 
         .voice-mic-btn:active {
@@ -321,12 +356,15 @@ function VoiceThinkingState({
         }
 
         .voice-mic-btn.voice-pulse {
-          animation: voice-pulse-animation 1.5s ease-in-out infinite;
+          animation:
+            voice-pulse-animation
+            1.5s ease-in-out infinite;
         }
 
         @keyframes voice-pulse-animation {
           0%, 100% {
             transform: scale(1);
+
             box-shadow:
               0 0 0 6px
               rgba(139,123,255,0.12),
@@ -336,6 +374,7 @@ function VoiceThinkingState({
 
           50% {
             transform: scale(1.08);
+
             box-shadow:
               0 0 0 18px
               rgba(139,123,255,0.05),
@@ -357,24 +396,28 @@ function VoiceThinkingState({
           padding: 8px 16px;
           border-radius: 999px;
           white-space: nowrap;
-          box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+          box-shadow:
+            0 8px 20px
+            rgba(0,0,0,0.4);
           opacity: 0;
           pointer-events: none;
-          transition: opacity 0.25s ease, transform 0.25s ease;
+          transition:
+            opacity 0.25s ease,
+            transform 0.25s ease;
         }
 
         .voice-toast.show {
           opacity: 1;
-          transform: translate(-50%, -14px);
+          transform:
+            translate(-50%, -14px);
         }
       `}</style>
 
       <div className="voice-card" onClick={(e) => e.stopPropagation()}>
-        {/* HEADER */}
-
         <div className="voice-header">
           <div>
             <p className="voice-eyebrow">Voice mode</p>
+
             <h2 className="voice-title">Bharat AI</h2>
           </div>
 
@@ -394,8 +437,6 @@ function VoiceThinkingState({
           </div>
         </div>
 
-        {/* SPHERE */}
-
         <div className="voice-stage">
           <div
             ref={sphereRef}
@@ -407,8 +448,6 @@ function VoiceThinkingState({
         </div>
 
         <p className="voice-caption">{statusLabel}</p>
-
-        {/* END CALL BUTTON */}
 
         <div className="voice-btn-wrap">
           <button
@@ -424,7 +463,12 @@ function VoiceThinkingState({
             <PhoneOff className="w-6 h-6 text-white" />
           </button>
 
-          <div className={`voice-toast ${toastMsg ? "show" : ""}`}>
+          <div
+            className={`
+              voice-toast
+              ${toastMsg ? "show" : ""}
+            `}
+          >
             {toastMsg}
           </div>
         </div>
@@ -447,7 +491,7 @@ export function Assistant() {
       id: "1",
       role: "ai",
       content:
-        "Hey Bharat! 👋\nI'm Bharat AI — your personal AI assistant.\nHow can I help you today?",
+        "Hey! 👋\nI'm Jojo — Bharat's personal AI assistant.\nHow can I help you today?",
       timestamp: new Date().toLocaleTimeString([], {
         hour: "2-digit",
         minute: "2-digit",
@@ -478,7 +522,13 @@ export function Assistant() {
   const [isSpeaking, setIsSpeaking] = useState(false);
 
   /* ==========================================================
-     REAL VOICE CONVERSATION MODE
+     SELECTED VOICE
+  ========================================================== */
+
+  const selectedVoiceRef = useRef<SpeechSynthesisVoice | null>(null);
+
+  /* ==========================================================
+     VOICE CONVERSATION MODE
   ========================================================== */
 
   const [isConversationMode, setIsConversationMode] = useState(false);
@@ -511,7 +561,7 @@ export function Assistant() {
     window.speechSynthesis.cancel();
 
     const cleanText = text
-      .replace(/[\*#_\`]/g, "")
+      .replace(/[\\*#_`]/g, "")
       .replace(/\n+/g, " ")
       .trim();
 
@@ -523,18 +573,14 @@ export function Assistant() {
       return;
     }
 
-    const speak = () => {
-      const voices = window.speechSynthesis.getVoices();
+    /* ========================================================
+       CHOOSE MOST CONSISTENT MALE VOICE
+    ======================================================== */
 
-      /*
-       * MALE VOICE NAME HINTS
-       *
-       * The Web Speech API doesn't expose a
-       * reliable "gender" field in most browsers,
-       * so we match on common male voice names
-       * shipped by Chrome/Edge/Safari platforms.
-       */
-      const maleNameHints = [
+    const chooseMaleVoice = (
+      voices: SpeechSynthesisVoice[],
+    ): SpeechSynthesisVoice | null => {
+      const maleHints = [
         "male",
         "david",
         "mark",
@@ -545,56 +591,166 @@ export function Assistant() {
         "aaron",
         "fred",
         "alex",
+        "microsoft david",
+        "google uk english male",
+        "google us english male",
+        "english male",
       ];
 
-      const isMaleByName = (voice: SpeechSynthesisVoice) =>
-        maleNameHints.some((hint) => voice.name.toLowerCase().includes(hint));
+      const femaleHints = [
+        "female",
+        "zira",
+        "samantha",
+        "karen",
+        "susan",
+        "heera",
+        "priya",
+        "neerja",
+        "google uk english female",
+        "google us english female",
+        "english female",
+      ];
 
-      const indianMaleVoice = voices.find(
+      const isMale = (voice: SpeechSynthesisVoice) => {
+        const name = voice.name.toLowerCase();
+
+        return maleHints.some((hint) => name.includes(hint));
+      };
+
+      const isFemale = (voice: SpeechSynthesisVoice) => {
+        const name = voice.name.toLowerCase();
+
+        return femaleHints.some((hint) => name.includes(hint));
+      };
+
+      /* ======================================================
+         1. INDIAN ENGLISH MALE
+      ====================================================== */
+
+      const indianMale = voices.find(
         (voice) =>
-          voice.lang.toLowerCase().includes("en-in") && isMaleByName(voice),
+          voice.lang.toLowerCase() === "en-in" &&
+          isMale(voice) &&
+          !isFemale(voice),
       );
 
-      const englishMaleVoice = voices.find(
+      if (indianMale) {
+        return indianMale;
+      }
+
+      /* ======================================================
+         2. INDIAN ENGLISH NON-FEMALE
+      ====================================================== */
+
+      const indianEnglish = voices.find(
         (voice) =>
-          voice.lang.toLowerCase().startsWith("en") && isMaleByName(voice),
+          voice.lang.toLowerCase().includes("en-in") && !isFemale(voice),
       );
 
-      const indianVoice = voices.find((voice) =>
-        voice.lang.toLowerCase().includes("en-in"),
+      if (indianEnglish) {
+        return indianEnglish;
+      }
+
+      /* ======================================================
+         3. ENGLISH MALE
+      ====================================================== */
+
+      const englishMale = voices.find(
+        (voice) =>
+          voice.lang.toLowerCase().startsWith("en") &&
+          isMale(voice) &&
+          !isFemale(voice),
       );
 
-      const englishVoice = voices.find((voice) =>
-        voice.lang.toLowerCase().startsWith("en"),
+      if (englishMale) {
+        return englishMale;
+      }
+
+      /* ======================================================
+         4. ENGLISH NON-FEMALE
+      ====================================================== */
+
+      const englishVoice = voices.find(
+        (voice) =>
+          voice.lang.toLowerCase().startsWith("en") && !isFemale(voice),
       );
 
-      const selectedVoice =
-        indianMaleVoice || englishMaleVoice || indianVoice || englishVoice;
+      if (englishVoice) {
+        return englishVoice;
+      }
+
+      /* ======================================================
+         5. LAST FALLBACK
+      ====================================================== */
+
+      return voices[0] || null;
+    };
+
+    /* ========================================================
+       SPEAK
+    ======================================================== */
+
+    const speak = () => {
+      const voices = window.speechSynthesis.getVoices();
+
+      if (!voices.length) {
+        return;
+      }
+
+      /* ======================================================
+         SELECT VOICE ONLY ONCE
+      ====================================================== */
+
+      if (!selectedVoiceRef.current) {
+        selectedVoiceRef.current = chooseMaleVoice(voices);
+
+        if (selectedVoiceRef.current) {
+          console.log(
+            "Bharat AI selected voice:",
+            selectedVoiceRef.current.name,
+            selectedVoiceRef.current.lang,
+          );
+        }
+      }
+
+      const selectedVoice = selectedVoiceRef.current;
 
       const utterance = new SpeechSynthesisUtterance(cleanText);
 
+      /* ======================================================
+         VOICE
+      ====================================================== */
+
       if (selectedVoice) {
         utterance.voice = selectedVoice;
+
+        utterance.lang = selectedVoice.lang;
+      } else {
+        utterance.lang = "en-IN";
       }
 
-      utterance.lang = "en-IN";
-      utterance.rate = 1;
+      /* ======================================================
+         CONSISTENT SETTINGS
+      ====================================================== */
+
+      utterance.rate = 0.95;
       utterance.pitch = 0.85;
       utterance.volume = 1;
+
+      /* ======================================================
+         START
+      ====================================================== */
 
       utterance.onstart = () => {
         setIsSpeaking(true);
       };
 
+      /* ======================================================
+         END
+      ====================================================== */
+
       utterance.onend = () => {
         setIsSpeaking(false);
-
-        /*
-         * IMPORTANT:
-         *
-         * If conversation mode is active,
-         * automatically start listening again.
-         */
 
         if (continueConversation && conversationModeRef.current) {
           setTimeout(() => {
@@ -603,7 +759,13 @@ export function Assistant() {
         }
       };
 
-      utterance.onerror = () => {
+      /* ======================================================
+         ERROR
+      ====================================================== */
+
+      utterance.onerror = (event) => {
+        console.error("Speech synthesis error:", event);
+
         setIsSpeaking(false);
 
         if (continueConversation && conversationModeRef.current) {
@@ -615,6 +777,10 @@ export function Assistant() {
 
       window.speechSynthesis.speak(utterance);
     };
+
+    /* ========================================================
+       LOAD VOICES
+    ======================================================== */
 
     const voices = window.speechSynthesis.getVoices();
 
@@ -660,10 +826,6 @@ export function Assistant() {
       conversationBusyRef.current = true;
     }
 
-    /* --------------------------------------------------------
-       USER MESSAGE
-    -------------------------------------------------------- */
-
     const newUserMsg: Message = {
       id: Date.now().toString(),
 
@@ -684,10 +846,6 @@ export function Assistant() {
     setIsLoading(true);
 
     try {
-      /* ------------------------------------------------------
-         BACKEND
-      ------------------------------------------------------ */
-
       const response = await fetch(
         "https://personal-ai-assistant-production-e0db.up.railway.app/ask",
         {
@@ -699,12 +857,6 @@ export function Assistant() {
 
           body: JSON.stringify({
             question: text,
-
-            /*
-             * Backend can ignore this for now.
-             * We send it so later you can
-             * support special voice handling.
-             */
             voice: fromVoice,
           }),
         },
@@ -717,10 +869,6 @@ export function Assistant() {
       const data = await response.json();
 
       const answer = data.answer || "I couldn't generate a response right now.";
-
-      /* ------------------------------------------------------
-         AI MESSAGE
-      ------------------------------------------------------ */
 
       const newAiMsg: Message = {
         id: (Date.now() + 1).toString(),
@@ -736,10 +884,6 @@ export function Assistant() {
       };
 
       setMessages((prev) => [...prev, newAiMsg]);
-
-      /* ------------------------------------------------------
-         VOICE RESPONSE
-      ------------------------------------------------------ */
 
       if (fromVoice || conversation) {
         setTimeout(() => {
@@ -808,9 +952,9 @@ export function Assistant() {
 
     recognition.lang = "en-IN";
 
-    /* --------------------------------------------------------
+    /* ========================================================
        RESULT
-    -------------------------------------------------------- */
+    ======================================================== */
 
     recognition.onresult = (event: any) => {
       let finalTranscript = "";
@@ -831,9 +975,9 @@ export function Assistant() {
 
       setInputValue(text);
 
-      /* ----------------------------------------------------
-           NORMAL MICROPHONE
-        ---------------------------------------------------- */
+      /* ======================================================
+         NORMAL MICROPHONE
+      ====================================================== */
 
       if (finalTranscript.trim() && !conversationModeRef.current) {
         voiceInputRef.current = true;
@@ -843,9 +987,9 @@ export function Assistant() {
         }, 250);
       }
 
-      /* ----------------------------------------------------
-           REAL VOICE CONVERSATION
-        ---------------------------------------------------- */
+      /* ======================================================
+         VOICE CONVERSATION
+      ====================================================== */
 
       if (finalTranscript.trim() && conversationModeRef.current) {
         setInputValue("");
@@ -854,32 +998,25 @@ export function Assistant() {
       }
     };
 
-    /* --------------------------------------------------------
+    /* ========================================================
        START
-    -------------------------------------------------------- */
+    ======================================================== */
 
     recognition.onstart = () => {
       setIsListening(true);
     };
 
-    /* --------------------------------------------------------
+    /* ========================================================
        END
-    -------------------------------------------------------- */
+    ======================================================== */
 
     recognition.onend = () => {
       setIsListening(false);
-
-      /*
-       * Do NOT automatically restart here.
-       *
-       * In conversation mode we restart
-       * after Bharat AI finishes speaking.
-       */
     };
 
-    /* --------------------------------------------------------
+    /* ========================================================
        ERROR
-    -------------------------------------------------------- */
+    ======================================================== */
 
     recognition.onerror = (event: any) => {
       console.error("Speech recognition error:", event.error);
@@ -962,14 +1099,6 @@ export function Assistant() {
 
       setIsListening(true);
     } catch (error) {
-      /*
-       * SpeechRecognition throws
-       * InvalidStateError if it is
-       * already running.
-       *
-       * We simply ignore that case.
-       */
-
       console.log("Recognition already active.");
     }
   };
@@ -1049,24 +1178,24 @@ export function Assistant() {
   const UserInitialAvatar = () => (
     <div
       className="
-          w-10
-          h-10
-          rounded-full
-          bg-gradient-to-br
-          from-[#3e3465]
-          to-[#8e85a6]
-          flex
-          items-center
-          justify-center
-          shadow-sm
-        "
+        w-10
+        h-10
+        rounded-full
+        bg-gradient-to-br
+        from-[#3e3465]
+        to-[#8e85a6]
+        flex
+        items-center
+        justify-center
+        shadow-sm
+      "
     >
       <span
         className="
-            text-white
-            font-semibold
-            text-sm
-          "
+          text-white
+          font-semibold
+          text-sm
+        "
       >
         B
       </span>
@@ -1076,26 +1205,26 @@ export function Assistant() {
   const BotAvatar = () => (
     <div
       className="
-          w-10
-          h-10
-          rounded-full
-          bg-gradient-to-br
-          from-[#eae5f2]
-          to-[#d8d0e5]
-          flex
-          items-center
-          justify-center
-          border
-          border-[#ddd6e8]
-          shadow-sm
-        "
+        w-10
+        h-10
+        rounded-full
+        bg-gradient-to-br
+        from-[#eae5f2]
+        to-[#d8d0e5]
+        flex
+        items-center
+        justify-center
+        border
+        border-[#ddd6e8]
+        shadow-sm
+      "
     >
       <Bot
         className="
-            w-5
-            h-5
-            text-[#5c4f78]
-          "
+          w-5
+          h-5
+          text-[#5c4f78]
+        "
       />
     </div>
   );
@@ -1103,24 +1232,24 @@ export function Assistant() {
   const UserSmallAvatar = () => (
     <div
       className="
-          w-9
-          h-9
-          rounded-full
-          bg-gradient-to-br
-          from-[#3e3465]
-          to-[#715c89]
-          flex
-          items-center
-          justify-center
-          shadow-sm
-        "
+        w-9
+        h-9
+        rounded-full
+        bg-gradient-to-br
+        from-[#3e3465]
+        to-[#715c89]
+        flex
+        items-center
+        justify-center
+        shadow-sm
+      "
     >
       <User
         className="
-            w-4
-            h-4
-            text-white
-          "
+          w-4
+          h-4
+          text-white
+        "
       />
     </div>
   );
@@ -1152,9 +1281,7 @@ export function Assistant() {
         bg-white
       "
     >
-      {/* ======================================================
-          HEADER
-      ====================================================== */}
+      {/* HEADER */}
 
       <div
         className="
@@ -1238,9 +1365,7 @@ export function Assistant() {
         </div>
       </div>
 
-      {/* ======================================================
-          CHAT AREA
-      ====================================================== */}
+      {/* CHAT AREA */}
 
       <div
         className="
@@ -1536,9 +1661,7 @@ export function Assistant() {
         </div>
       </div>
 
-      {/* ======================================================
-          INPUT
-      ====================================================== */}
+      {/* INPUT */}
 
       <div
         className="
@@ -1628,9 +1751,7 @@ export function Assistant() {
             </button>
           )}
 
-          {/* ==================================================
-              TEXT SEND
-          ================================================== */}
+          {/* SEND / VOICE */}
 
           {inputValue.trim() ? (
             <button
@@ -1660,10 +1781,6 @@ export function Assistant() {
               />
             </button>
           ) : (
-            /* =================================================
-               REAL VOICE MODE BUTTON
-            ================================================= */
-
             <button
               type="button"
               onClick={
@@ -1695,27 +1812,15 @@ export function Assistant() {
               }
             >
               {isConversationMode ? (
-                <PhoneOff
-                  className="
-                    w-5
-                    h-5
-                  "
-                />
+                <PhoneOff className="w-5 h-5" />
               ) : (
-                <Phone
-                  className="
-                    w-5
-                    h-5
-                  "
-                />
+                <Phone className="w-5 h-5" />
               )}
             </button>
           )}
         </form>
 
-        {/* ====================================================
-            MODE INFORMATION
-        ==================================================== */}
+        {/* MODE INFORMATION */}
 
         <p
           className="
@@ -1731,9 +1836,7 @@ export function Assistant() {
         </p>
       </div>
 
-      {/* ======================================================
-          VOICE CONVERSATION WINDOW
-      ====================================================== */}
+      {/* VOICE CONVERSATION WINDOW */}
 
       {isConversationMode && (
         <VoiceThinkingState
