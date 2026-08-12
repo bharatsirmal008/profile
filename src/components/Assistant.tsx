@@ -18,6 +18,8 @@ import {
 } from "lucide-react";
 
 import { motion } from "framer-motion";
+import RobotLoader from "@/components/RobotLoader";
+import { VoiceBackground } from "@/components/VoiceBackground";
 
 /* ============================================================
    MESSAGE TYPE
@@ -52,6 +54,47 @@ type SpeechRecognitionInstance = {
 type SpeechRecognitionConstructor = new () => SpeechRecognitionInstance;
 
 /* ============================================================
+   ANIMATED SOUND BARS
+============================================================ */
+
+const AnimatedSoundBars = ({ isAnimating, onClick }: { isAnimating: boolean, onClick: () => void }) => {
+  // Scaled down heights to fit nicely in the modal
+  const heights = [48, 69, 90, 58, 34, 70, 90, 70, 58, 36];
+  
+  return (
+    <button 
+      onClick={onClick}
+      className="flex items-center justify-center gap-2 h-[120px] bg-transparent border-none cursor-pointer outline-none hover:scale-105 transition-transform my-4"
+      title="End voice conversation"
+    >
+      {heights.map((h, i) => {
+        const duration = (0.9 + (i % 3) * 0.2).toFixed(2);
+        const delay = (i * 0.07).toFixed(2);
+        return (
+          <div
+            key={i}
+            className="relative w-[12px] rounded-full bg-transparent border-[2px] border-[#14ff82] origin-center"
+            style={{
+              height: `${h}px`,
+              boxShadow: "0 0 6px rgba(20,255,130,0.8), inset 0 0 4px rgba(20,255,130,0.25)",
+              animation: isAnimating ? `sound-bounce ${duration}s ease-in-out ${delay}s infinite` : 'none',
+            }}
+          >
+            <div className="absolute inset-0 rounded-full bg-[#14ff82]/10" />
+          </div>
+        );
+      })}
+      <style jsx>{`
+        @keyframes sound-bounce {
+          0%, 100% { transform: scaleY(1); }
+          50% { transform: scaleY(0.4); }
+        }
+      `}</style>
+    </button>
+  );
+};
+
+/* ============================================================
    VOICE THINKING STATE
 ============================================================ */
 
@@ -66,72 +109,9 @@ function VoiceThinkingState({
   isSpeaking: boolean;
   onClose: () => void;
 }) {
-  const sphereRef = useRef<HTMLDivElement>(null);
-
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    if (!sphereRef.current) return;
-
-    sphereRef.current.innerHTML = "";
-
-    const RADIUS = 100;
-    const RINGS = 22;
-    const PER_RING = 26;
-
-    for (let i = 0; i <= RINGS; i++) {
-      const phi = Math.PI * (i / RINGS);
-
-      const y = RADIUS * Math.cos(phi);
-
-      const ringRadius = RADIUS * Math.sin(phi);
-
-      const count = Math.max(1, Math.round(PER_RING * Math.sin(phi)));
-
-      for (let j = 0; j < count; j++) {
-        const theta = (2 * Math.PI * j) / count;
-
-        const x = ringRadius * Math.cos(theta);
-
-        const z = ringRadius * Math.sin(theta);
-
-        const dot = document.createElement("div");
-
-        const depth = (z + RADIUS) / (2 * RADIUS);
-
-        const scale = 0.5 + depth * 0.9;
-
-        const opacity = 0.25 + depth * 0.75;
-
-        const r = Math.round(140 + depth * 70);
-
-        const g = Math.round(120 + depth * 130);
-
-        const b = 255;
-
-        dot.style.position = "absolute";
-        dot.style.top = "50%";
-        dot.style.left = "50%";
-
-        dot.style.width = "3.5px";
-        dot.style.height = "3.5px";
-
-        dot.style.borderRadius = "50%";
-
-        dot.style.margin = "-1.75px 0 0 -1.75px";
-
-        dot.style.transform = `translate3d(${x}px, ${-y}px, ${z}px) scale(${scale})`;
-
-        dot.style.opacity = opacity.toString();
-
-        dot.style.background = `rgb(${r}, ${g}, ${b})`;
-
-        sphereRef.current.appendChild(dot);
-      }
-    }
-  }, []);
 
   useEffect(() => {
     setToastMsg("Starting Bharat AI…");
@@ -177,26 +157,21 @@ function VoiceThinkingState({
         flex
         items-center
         justify-center
-        bg-[#0b0b10]/95
-        backdrop-blur-sm
+        bg-black
       "
     >
+      <VoiceBackground />
       <style>{`
         .voice-card {
-          width: 360px;
-          background:
-            linear-gradient(
-              180deg,
-              #14141c 0%,
-              #0e0e15 100%
-            );
-          border: 1px solid #23232f;
-          border-radius: 20px;
-          padding: 24px 24px 32px;
+          position: relative;
+          z-index: 10;
+          width: 100%;
+          max-width: 360px;
+          background: transparent;
+          border: none;
+          padding: 24px 16px 32px;
           box-sizing: border-box;
-          box-shadow:
-            0 20px 60px
-            rgba(0,0,0,0.5);
+          box-shadow: none;
         }
 
         .voice-header {
@@ -259,6 +234,7 @@ function VoiceThinkingState({
         .voice-close {
           color: #6b6b7a;
           transition: color 0.15s ease;
+          padding: 8px;
         }
 
         .voice-close:hover {
@@ -268,7 +244,7 @@ function VoiceThinkingState({
         .voice-stage {
           position: relative;
           width: 100%;
-          height: 260px;
+          min-height: 280px;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -411,57 +387,45 @@ function VoiceThinkingState({
           transform:
             translate(-50%, -14px);
         }
+
+        .dark-scrollbar::-webkit-scrollbar {
+          width: 6px;
+        }
+        .dark-scrollbar::-webkit-scrollbar-track {
+          background: rgba(255, 255, 255, 0.05);
+          border-radius: 4px;
+        }
+        .dark-scrollbar::-webkit-scrollbar-thumb {
+          background: rgba(255, 255, 255, 0.2);
+          border-radius: 4px;
+        }
+        .dark-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: rgba(255, 255, 255, 0.3);
+        }
       `}</style>
 
       <div className="voice-card" onClick={(e) => e.stopPropagation()}>
-        <div className="voice-header">
-          <div>
-            <p className="voice-eyebrow">Voice mode</p>
-
-            <h2 className="voice-title">Bharat AI</h2>
-          </div>
-
-          <div className="flex flex-col items-end gap-2">
-            <div className="voice-live">
-              <span className="voice-live-dot" />
-              Live
-            </div>
-
-            <button
-              onClick={onClose}
-              className="voice-close"
-              aria-label="Close voice mode"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
+        <div className="flex justify-end">
+          <button
+            onClick={onClose}
+            className="voice-close"
+            aria-label="Close voice mode"
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
 
         <div className="voice-stage">
-          <div
-            ref={sphereRef}
-            className={`
-              voice-sphere
-              ${isListening || isSpeaking ? "voice-pulse" : ""}
-            `}
-          />
+          <RobotLoader isLoading={true} isThinking={!isSpeaking} isSpeaking={isSpeaking} size={200} />
         </div>
 
         <p className="voice-caption">{statusLabel}</p>
 
         <div className="voice-btn-wrap">
-          <button
-            type="button"
-            onClick={handleEndTap}
-            className={`
-              voice-mic-btn
-              ${isListening || isSpeaking ? "voice-pulse" : ""}
-            `}
-            title="End voice conversation"
-            aria-label="End voice conversation"
-          >
-            <PhoneOff className="w-6 h-6 text-white" />
-          </button>
+          <AnimatedSoundBars 
+            isAnimating={isListening} 
+            onClick={handleEndTap} 
+          />
 
           <div
             className={`
@@ -1209,13 +1173,14 @@ export function Assistant() {
         h-10
         rounded-full
         bg-gradient-to-br
-        from-[#eae5f2]
-        to-[#d8d0e5]
+        from-white/20
+        to-white/5
         flex
         items-center
         justify-center
         border
-        border-[#ddd6e8]
+        border-white/20
+        backdrop-blur-md
         shadow-sm
       "
     >
@@ -1223,7 +1188,7 @@ export function Assistant() {
         className="
           w-5
           h-5
-          text-[#5c4f78]
+          text-white
         "
       />
     </div>
@@ -1235,20 +1200,19 @@ export function Assistant() {
         w-9
         h-9
         rounded-full
-        bg-gradient-to-br
-        from-[#3e3465]
-        to-[#715c89]
+        bg-transparent
+        border
+        border-[#14ff82]/50
         flex
         items-center
         justify-center
-        shadow-sm
       "
     >
       <User
         className="
           w-4
           h-4
-          text-white
+          text-[#14ff82]
         "
       />
     </div>
@@ -1277,92 +1241,13 @@ export function Assistant() {
         w-full
         flex-col
         overflow-hidden
-        rounded-3xl
-        bg-white
+        rounded-[10px]
+        bg-transparent
       "
+      style={{ fontFamily: "'Amarna', sans-serif" }}
     >
-      {/* HEADER */}
-
-      <div
-        className="
-          h-20
-          border-b
-          border-gray-100
-          flex
-          items-center
-          justify-between
-          px-6
-          bg-white
-          shrink-0
-        "
-      >
-        <div
-          className="
-            flex
-            items-center
-            gap-3
-          "
-        >
-          <UserInitialAvatar />
-
-          <div>
-            <h1
-              className="
-                font-semibold
-                text-gray-900
-                text-[17px]
-              "
-            >
-              Bharat AI
-            </h1>
-
-            <p
-              className="
-                text-xs
-                text-gray-400
-              "
-            >
-              Personal AI Assistant
-            </p>
-          </div>
-        </div>
-
-        <div
-          className="
-            flex
-            items-center
-            gap-4
-          "
-        >
-          <div
-            className="
-              flex
-              items-center
-              gap-1.5
-              px-3
-              py-1.5
-              bg-[#eae5f2]
-              text-[#716587]
-              rounded-full
-              text-sm
-              font-medium
-            "
-          >
-            <Bot className="w-4 h-4" />
-
-            <span>Online</span>
-          </div>
-
-          <button
-            type="button"
-            className="
-              text-gray-400
-              hover:text-gray-600
-            "
-          >
-            <MoreHorizontal className="w-5 h-5" />
-          </button>
-        </div>
+      <div className="absolute inset-0 z-0 pointer-events-none rounded-[10px] overflow-hidden">
+        <VoiceBackground />
       </div>
 
       {/* CHAT AREA */}
@@ -1375,7 +1260,10 @@ export function Assistant() {
           py-6
           pb-28
           scroll-smooth
-          bg-white
+          bg-transparent
+          relative
+          z-10
+          dark-scrollbar
         "
       >
         {/* DATE */}
@@ -1388,32 +1276,16 @@ export function Assistant() {
             my-6
           "
         >
-          <div
-            className="
-              h-px
-              bg-gray-100
-              flex-1
-            "
-          />
-
           <span
             className="
               px-4
               text-[13px]
-              text-gray-400
+              text-gray-300
               font-medium
             "
           >
             {todayDate}
           </span>
-
-          <div
-            className="
-              h-px
-              bg-gray-100
-              flex-1
-            "
-          />
         </div>
 
         {/* MESSAGES */}
@@ -1462,8 +1334,8 @@ export function Assistant() {
                       py-4
                       ${
                         msg.role === "user"
-                          ? "bg-gradient-to-r from-[#3e3465] to-[#715c89] text-white rounded-2xl rounded-tr-sm shadow-sm"
-                          : "bg-white text-gray-800 rounded-2xl rounded-tl-sm border border-gray-200 shadow-sm"
+                          ? "bg-black/40 backdrop-blur-md text-[#14ff82] rounded-2xl rounded-tr-sm border border-white/10 shadow-sm"
+                          : "bg-black/40 backdrop-blur-md text-white rounded-2xl rounded-tl-sm border border-white/10 shadow-sm"
                       }
                     `}
                 >
@@ -1490,7 +1362,7 @@ export function Assistant() {
                   <span
                     className="
                         text-[12px]
-                        text-gray-400
+                        text-gray-300
                         font-medium
                       "
                   >
@@ -1512,8 +1384,8 @@ export function Assistant() {
                         type="button"
                         onClick={() => speakResponse(msg.content)}
                         className="
-                            text-gray-400
-                            hover:text-[#5c4f78]
+                            text-gray-300
+                            hover:text-white
                           "
                         title="Speak response"
                       >
@@ -1528,7 +1400,7 @@ export function Assistant() {
                       <button
                         type="button"
                         className="
-                            text-gray-400
+                            text-gray-300
                             hover:text-gray-600
                           "
                       >
@@ -1543,7 +1415,7 @@ export function Assistant() {
                       <button
                         type="button"
                         className="
-                            text-gray-400
+                            text-gray-300
                             hover:text-gray-600
                           "
                       >
@@ -1671,11 +1543,12 @@ export function Assistant() {
           w-full
           p-4
           bg-gradient-to-t
-          from-white
-          via-white
+          from-black/80
+          via-black/50
           to-transparent
           pt-10
-          rounded-b-3xl
+          rounded-b-[10px]
+          z-10
         "
       >
         <form
@@ -1683,8 +1556,11 @@ export function Assistant() {
           className="
             max-w-3xl
             mx-auto
-            bg-[#f0eff5]
-            rounded-full
+            bg-black/40
+            backdrop-blur-md
+            border
+            border-white/20
+            rounded-[15px]
             px-2
             py-2
             flex
@@ -1727,8 +1603,8 @@ export function Assistant() {
               flex-1
               bg-transparent
               text-[15px]
-              text-gray-800
-              placeholder:text-[#8e85a6]
+              text-white
+              placeholder:text-gray-400
               outline-none
               px-3
             "
@@ -1742,7 +1618,7 @@ export function Assistant() {
               onClick={stopSpeaking}
               className="
                 p-2
-                text-[#5c4f78]
+                text-white
                 hover:text-red-500
               "
               title="Stop speaking"
@@ -1793,10 +1669,9 @@ export function Assistant() {
                 h-10
                 ${
                   isConversationMode
-                    ? "bg-red-500 hover:bg-red-600 animate-pulse"
-                    : "bg-[#a699c2] hover:bg-[#8e85a6]"
+                    ? "bg-red-500 hover:bg-red-600 text-white animate-pulse"
+                    : "bg-transparent text-[#14ff82] hover:bg-[#14ff82]/10"
                 }
-                text-white
                 rounded-full
                 transition-all
                 flex
@@ -1814,7 +1689,7 @@ export function Assistant() {
               {isConversationMode ? (
                 <PhoneOff className="w-5 h-5" />
               ) : (
-                <Phone className="w-5 h-5" />
+                <svg width="20" height="20" viewBox="0 0 21.2 21.2" fill="none" xmlns="http://www.w3.org/2000/svg" className="inline-block overflow-visible"><rect fill="currentColor" height="6px" fillOpacity="1" width="1.2px" rx="0.6" ry="0.6" x="0" y="7.6"></rect><rect fill="currentColor" height="10px" fillOpacity="1" width="1.2px" rx="0.6" ry="0.6" x="3.9999999999999996" y="5.6"></rect><rect fill="currentColor" height="16px" fillOpacity="1" width="1.2px" rx="0.6" ry="0.6" x="8" y="2.5999999999999996"></rect><rect fill="currentColor" height="10px" fillOpacity="1" width="1.2px" rx="0.6" ry="0.6" x="12" y="5.6"></rect><rect fill="currentColor" height="16px" fillOpacity="1" width="1.2px" rx="0.6" ry="0.6" x="16" y="2.5999999999999996"></rect><rect fill="currentColor" height="6px" fillOpacity="1" width="1.2px" rx="0.6" ry="0.6" x="20" y="7.6"></rect></svg>
               )}
             </button>
           )}
@@ -1826,7 +1701,7 @@ export function Assistant() {
           className="
             text-center
             text-[11px]
-            text-gray-400
+            text-gray-300
             mt-2
           "
         >

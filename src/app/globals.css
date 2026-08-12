@@ -29,6 +29,13 @@
     0% { transform: translateX(0); }
     100% { transform: translateX(-50%); }
   }
+
+  --animate-gradient-x: gradient-x 3s ease infinite;
+
+  @keyframes gradient-x {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+  }
 }
 
 @layer base {
@@ -37,10 +44,27 @@
     color: var(--foreground);
     @apply font-sans antialiased selection:bg-zinc-100;
   }
+  button, [role="button"] {
+    @apply cursor-pointer;
+  }
 }
 
 @layer utilities {
   .glass {
     @apply backdrop-blur-md bg-white/60 border border-zinc-200/50 shadow-sm transition-all;
+  }
+
+  .dark-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+  .dark-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .dark-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+  }
+  .dark-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
   }
 }

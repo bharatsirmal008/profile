@@ -22,7 +22,6 @@ import {
   Instagram,
 } from "lucide-react";
 import { About } from "@/components/About";
-import { ChromePicker } from 'react-color';
 import { Projects } from "@/components/Projects";
 import { Education } from "@/components/Education";
 import { SkillsMarquee } from "@/components/SkillsMarquee";
@@ -31,13 +30,21 @@ import { Resume } from "@/components/Resume";
 import { Assistant } from "@/components/Assistant";
 
 const FOLDERS = [
-  { id: "about", label: "About", initialX: 32, initialY: 48, delay: 0.3 },
+  {
+    id: "about",
+    label: "About",
+    initialX: 32,
+    initialY: 48,
+    delay: 0.3,
+    image: "/about.avif",
+  },
   {
     id: "projects",
     label: "Projects",
     initialX: 32,
     initialY: 176,
     delay: 0.4,
+    image: "/projects.png",
   },
   {
     id: "education",
@@ -45,8 +52,16 @@ const FOLDERS = [
     initialX: 32,
     initialY: 304,
     delay: 0.5,
+    image: "/education.png",
   },
-  { id: "skills", label: "Skills", initialX: 32, initialY: 432, delay: 0.6 },
+  {
+    id: "skills",
+    label: "Skills",
+    initialX: 32,
+    initialY: 432,
+    delay: 0.6,
+    image: "/skill.png",
+  },
 ];
 
 function DraggableFolder({
@@ -207,12 +222,15 @@ function DraggableFolder({
       onPointerDown={onPointerDown}
     >
       <div
-        className={`relative w-20 h-20 transition-all drop-shadow-lg flex items-center justify-center ${isDragMode ? "drop-shadow-2xl" : "hover:scale-105"}`}
+        className={`relative w-[68px] h-[68px] transition-all drop-shadow-lg flex items-center justify-center ${isDragMode ? "drop-shadow-2xl" : "hover:scale-105"}`}
       >
         <img
-          src="https://framerusercontent.com/images/JNuFoJNZB5xor0NzSTUqoFLBk.png"
+          src={
+            folder.image ||
+            "https://framerusercontent.com/images/JNuFoJNZB5xor0NzSTUqoFLBk.png"
+          }
           alt="Folder"
-          className="w-full h-full object-contain pointer-events-none"
+          className="w-full h-full object-cover pointer-events-none rounded-[15px]"
           draggable={false}
         />
       </div>
@@ -230,15 +248,11 @@ function DraggableWindow({
   isMaximized,
   setIsMaximized,
   setActiveWindow,
-  duotoneColor,
-  setDuotoneColor,
 }: {
   activeWindow: string;
   isMaximized: boolean;
   setIsMaximized: (val: boolean) => void;
   setActiveWindow: (val: string | null) => void;
-  duotoneColor: { r: number, g: number, b: number };
-  setDuotoneColor: (c: { r: number, g: number, b: number }) => void;
 }) {
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
@@ -409,11 +423,11 @@ function DraggableWindow({
           : { opacity: 1, scale: isDragMode ? 1.02 : 1, y: 0 }
       }
       className={`absolute z-50 overflow-hidden flex flex-col transition-all duration-300 ${
-        activeWindow === "resume" ||
-        activeWindow === "assistant" ||
-        activeWindow === "about"
+        activeWindow === "resume" || activeWindow === "about"
           ? "bg-white rounded-[10px] border border-gray-200"
-          : "glass bg-white/95 backdrop-blur-3xl border border-white/50"
+          : activeWindow === "assistant"
+            ? "bg-black rounded-[10px] border-none"
+            : "glass bg-white/95 backdrop-blur-3xl border border-white/50"
       } ${
         isDragMode
           ? "shadow-[0_40px_80px_rgba(0,0,0,0.4)] cursor-grabbing"
@@ -421,108 +435,129 @@ function DraggableWindow({
       } ${
         isMaximized
           ? "inset-0 w-full h-full rounded-none"
-          : "max-md:!inset-0 max-md:!w-full max-md:!h-full max-md:!rounded-none " + (isCentered
-            ? activeWindow === "assistant"
-              ? "top-[10%] left-0 right-0 mx-auto w-[95vw] max-w-[700px] h-[75vh] max-h-[calc(100vh-160px)] rounded-[10px]"
-              : activeWindow === "contact"
-                ? "top-[10%] left-0 right-0 mx-auto w-[95vw] max-w-[750px] h-auto max-h-[calc(100vh-160px)] rounded-[10px]"
-                : activeWindow === "resume" || activeWindow === "about"
-                  ? "top-[10%] left-0 right-0 mx-auto w-[95vw] max-w-[900px] h-auto max-h-[calc(100vh-160px)] rounded-[10px]"
-                  : activeWindow === "services"
-                    ? "top-[20%] left-0 right-0 mx-auto w-[320px] h-[340px] rounded-[10px]"
+          : "max-md:!inset-0 max-md:!w-full max-md:!h-full max-md:!rounded-none " +
+            (isCentered
+              ? activeWindow === "assistant"
+                ? "top-[10%] left-0 right-0 mx-auto w-[95vw] max-w-[700px] h-[75vh] max-h-[calc(100vh-160px)] rounded-[10px]"
+                : activeWindow === "contact"
+                  ? "top-[10%] left-0 right-0 mx-auto w-[95vw] max-w-[750px] h-auto max-h-[calc(100vh-160px)] rounded-[10px]"
+                  : activeWindow === "resume" || activeWindow === "about"
+                    ? "top-[10%] left-0 right-0 mx-auto w-[95vw] max-w-[900px] h-auto max-h-[calc(100vh-160px)] rounded-[10px]"
                     : "top-[10%] left-[15%] w-[70vw] h-[75vh] rounded-2xl"
-            : // Absolute positioned layout (stripped of top/left/right/mx-auto)
-              activeWindow === "assistant"
-              ? "w-[95vw] max-w-[700px] h-[75vh] max-h-[calc(100vh-160px)] rounded-[10px]"
-              : activeWindow === "contact"
-                ? "w-[95vw] max-w-[750px] h-auto max-h-[calc(100vh-160px)] rounded-[10px]"
-                : activeWindow === "resume" || activeWindow === "about"
-                  ? "w-[95vw] max-w-[900px] h-auto max-h-[calc(100vh-160px)] rounded-[10px]"
-                  : activeWindow === "services"
-                    ? "w-[320px] h-[340px] rounded-[10px]"
+              : // Absolute positioned layout (stripped of top/left/right/mx-auto)
+                activeWindow === "assistant"
+                ? "w-[95vw] max-w-[700px] h-[75vh] max-h-[calc(100vh-160px)] rounded-[10px]"
+                : activeWindow === "contact"
+                  ? "w-[95vw] max-w-[750px] h-auto max-h-[calc(100vh-160px)] rounded-[10px]"
+                  : activeWindow === "resume" || activeWindow === "about"
+                    ? "w-[95vw] max-w-[900px] h-auto max-h-[calc(100vh-160px)] rounded-[10px]"
                     : "w-[70vw] h-[75vh] rounded-2xl")
       }`}
       style={dynamicStyle}
       onPointerDown={onPointerDown}
     >
       {/* Window Title Bar */}
-      {activeWindow !== "projects" && activeWindow !== "education" && activeWindow !== "skills" && (
-        <div
-          className={`h-12 border-b border-zinc-200/50 flex items-center px-4 gap-2 cursor-grab shrink-0 group ${
-            activeWindow === "resume" ||
+      {activeWindow !== "projects" &&
+        activeWindow !== "education" &&
+        activeWindow !== "skills" && (
+          <div
+            className={`h-12 border-b border-zinc-200/50 flex items-center px-4 gap-2 cursor-grab shrink-0 group ${
+              activeWindow === "resume" ||
+              activeWindow === "about" ||
+              activeWindow === "contact"
+                ? "bg-white"
+                : activeWindow === "assistant"
+                  ? "bg-[#050508] !border-white/10 text-white"
+                  : "bg-zinc-100/50 backdrop-blur-xl"
+            }`}
+          >
+            {/* Close */}
+            <div
+              className="window-control-btn w-3.5 h-3.5 rounded-full bg-[#ff5f56] hover:bg-[#ff5f56]/80 cursor-pointer shadow-sm border border-[#e0443e] flex items-center justify-center transition-colors"
+              onClick={(e) => {
+                e.stopPropagation();
+                setActiveWindow(null);
+                setIsMaximized(false);
+              }}
+            >
+              <X className="w-2.5 h-2.5 text-black/60 opacity-0 group-hover:opacity-100 transition-opacity" />
+            </div>
+            {/* Minimize */}
+            <div
+              className="window-control-btn w-3.5 h-3.5 rounded-full bg-[#ffbd2e] hover:bg-[#ffbd2e]/80 cursor-pointer shadow-sm border border-[#dea123] flex items-center justify-center transition-colors"
+              onClick={(e) => {
+                e.stopPropagation();
+                setActiveWindow(null);
+                setIsMaximized(false);
+              }}
+            >
+              <Minus className="w-2.5 h-2.5 text-black/60 opacity-0 group-hover:opacity-100 transition-opacity" />
+            </div>
+            {/* Maximize */}
+            <div
+              className="window-control-btn w-3.5 h-3.5 rounded-full bg-[#27c93f] hover:bg-[#27c93f]/80 cursor-pointer shadow-sm border border-[#1aab29] flex items-center justify-center transition-colors"
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsMaximized(!isMaximized);
+              }}
+            >
+              <Maximize2 className="w-2 h-2 text-black/60 opacity-0 group-hover:opacity-100 transition-opacity" />
+            </div>
+            {activeWindow === "resume" ||
             activeWindow === "about" ||
-            activeWindow === "contact"
-              ? "bg-white"
-              : activeWindow === "assistant"
-                ? "bg-[#f5f5f5]"
-                : "bg-zinc-100/50 backdrop-blur-xl"
-          }`}
-        >
-          {/* Close */}
-          <div
-            className="window-control-btn w-3.5 h-3.5 rounded-full bg-[#ff5f56] hover:bg-[#ff5f56]/80 cursor-pointer shadow-sm border border-[#e0443e] flex items-center justify-center transition-colors"
-            onClick={(e) => {
-              e.stopPropagation();
-              setActiveWindow(null);
-              setIsMaximized(false);
-            }}
-          >
-            <X className="w-2.5 h-2.5 text-black/60 opacity-0 group-hover:opacity-100 transition-opacity" />
-          </div>
-          {/* Minimize */}
-          <div
-            className="window-control-btn w-3.5 h-3.5 rounded-full bg-[#ffbd2e] hover:bg-[#ffbd2e]/80 cursor-pointer shadow-sm border border-[#dea123] flex items-center justify-center transition-colors"
-            onClick={(e) => {
-              e.stopPropagation();
-              setActiveWindow(null);
-              setIsMaximized(false);
-            }}
-          >
-            <Minus className="w-2.5 h-2.5 text-black/60 opacity-0 group-hover:opacity-100 transition-opacity" />
-          </div>
-          {/* Maximize */}
-          <div
-            className="window-control-btn w-3.5 h-3.5 rounded-full bg-[#27c93f] hover:bg-[#27c93f]/80 cursor-pointer shadow-sm border border-[#1aab29] flex items-center justify-center transition-colors"
-            onClick={(e) => {
-              e.stopPropagation();
-              setIsMaximized(!isMaximized);
-            }}
-          >
-            <Maximize2 className="w-2 h-2 text-black/60 opacity-0 group-hover:opacity-100 transition-opacity" />
-          </div>
-          {activeWindow === "resume" || activeWindow === "about" || activeWindow === "contact" ? (
-            <>
-              <div className="flex-1"></div>
-              <div className="flex items-center gap-4 text-gray-600 mr-2 pointer-events-auto">
-                <a href="https://www.linkedin.com/in/bharat-sirmal/" target="_blank" rel="noopener noreferrer" className="hover:text-gray-900 transition-colors">
-                  <Linkedin className="w-4 h-4" />
-                </a>
-                <a href="https://github.com/bharatsirmal008" target="_blank" rel="noopener noreferrer" className="hover:text-gray-900 transition-colors">
-                  <Github className="w-4 h-4" />
-                </a>
-                <a href="https://www.instagram.com/bharat_sirmal008/" target="_blank" rel="noopener noreferrer" className="hover:text-gray-900 transition-colors">
-                  <Instagram className="w-4 h-4" />
-                </a>
+            activeWindow === "contact" ? (
+              <>
+                <div className="flex-1"></div>
+                <div className="flex items-center gap-4 text-gray-600 mr-2 pointer-events-auto">
+                  <a
+                    href="https://www.linkedin.com/in/bharat-sirmal/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-gray-900 transition-colors"
+                  >
+                    <Linkedin className="w-4 h-4" />
+                  </a>
+                  <a
+                    href="https://github.com/bharatsirmal008"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-gray-900 transition-colors"
+                  >
+                    <Github className="w-4 h-4" />
+                  </a>
+                  <a
+                    href="https://www.instagram.com/bharat_sirmal008/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-gray-900 transition-colors"
+                  >
+                    <Instagram className="w-4 h-4" />
+                  </a>
+                </div>
+              </>
+            ) : activeWindow === "assistant" ? (
+              <div className="flex-1 text-center font-bold text-[20px] pr-10 pointer-events-none tracking-wide">
+                <span 
+                  className="bg-gradient-to-r from-cyan-300 via-white to-orange-400 text-transparent bg-clip-text bg-[length:200%_auto] animate-gradient-x drop-shadow-sm"
+                  style={{ fontFamily: "'Amarna', sans-serif" }}
+                >
+                  JOJO
+                </span>
               </div>
-            </>
-          ) : activeWindow === "assistant" ? (
-            <div className="flex-1 text-center font-bold text-[13px] text-gray-700 pr-10 pointer-events-none">
-              Bharat AI
-            </div>
-          ) : (
-            <div className="flex-1 text-center font-bold text-sm text-zinc-700 capitalize pr-10 pointer-events-none">
-              {activeWindow}
-            </div>
-          )}
-        </div>
-      )}
+            ) : (
+              <div className="flex-1 text-center font-bold text-sm text-zinc-700 capitalize pr-10 pointer-events-none">
+                {activeWindow}
+              </div>
+            )}
+          </div>
+        )}
       {/* Window Content */}
       <div
-        className={`flex-1 overflow-y-auto cursor-auto relative ${activeWindow === "resume" || activeWindow === "assistant" || activeWindow === "about" || activeWindow === "contact" || activeWindow === "services" ? "rounded-b-[10px]" : "rounded-b-2xl"}`}
+        className={`flex-1 overflow-y-auto cursor-auto relative ${activeWindow === "resume" || activeWindow === "assistant" || activeWindow === "about" || activeWindow === "contact" ? "rounded-b-[10px]" : "rounded-b-2xl"}`}
         onPointerDown={(e) => e.stopPropagation()} // Let scrollable area swallow pointer events for touch scroll
       >
         <div
-          className={`relative ${activeWindow === "resume" || activeWindow === "assistant" || activeWindow === "about" || activeWindow === "contact" || activeWindow === "projects" || activeWindow === "services" || activeWindow === "education" || activeWindow === "skills" ? "p-0 bg-white h-full flex flex-col" : "absolute inset-0 p-8"}`}
+          className={`relative ${activeWindow === "resume" || activeWindow === "about" || activeWindow === "contact" || activeWindow === "projects" || activeWindow === "education" || activeWindow === "skills" ? "p-0 bg-white h-full flex flex-col" : activeWindow === "assistant" ? "p-0 bg-transparent h-full flex flex-col" : "absolute inset-0 p-8"}`}
         >
           {activeWindow === "about" && <About />}
           {activeWindow === "projects" && (
@@ -539,7 +574,7 @@ function DraggableWindow({
             />
           )}
           {activeWindow === "education" && (
-            <Education 
+            <Education
               onClose={() => {
                 setActiveWindow(null);
                 setIsMaximized(false);
@@ -566,7 +601,6 @@ function DraggableWindow({
             />
           )}
           {activeWindow === "contact" && <Contact />}
-          {activeWindow === "services" && <DuotonePicker color={duotoneColor} onChange={setDuotoneColor} />}
           {activeWindow === "resume" && <Resume />}
           {activeWindow === "assistant" && <Assistant />}
         </div>
@@ -583,25 +617,10 @@ function DraggableWindow({
    clusters in indigo/violet toward the center.
 ============================================================ */
 
-
-
-function DuotonePicker({ color, onChange }: { color: { r: number, g: number, b: number }, onChange: (c: { r: number, g: number, b: number }) => void }) {
-  return (
-    <div className="flex items-center justify-center w-full h-full bg-white">
-      <ChromePicker 
-        color={color} 
-        onChange={(colorResult) => onChange({ r: colorResult.rgb.r, g: colorResult.rgb.g, b: colorResult.rgb.b })} 
-        disableAlpha={true}
-      />
-    </div>
-  )
-}
-
 export function Hero() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [activeWindow, setActiveWindow] = useState<string | null>(null);
   const [isMaximized, setIsMaximized] = useState(false);
-  const [duotoneColor, setDuotoneColor] = useState({ r: 50, g: 12, b: 240 });
 
   const toggleWindow = (id: string, maximize = false) => {
     if (activeWindow === id) {
@@ -617,39 +636,17 @@ export function Hero() {
       ref={containerRef}
       className="relative h-[100dvh] w-full overflow-hidden bg-[#0a0b0d] font-sans selection:bg-black selection:text-white"
     >
-      <svg width="0" height="0" className="absolute hidden">
-        <filter id="duotone">
-          <feColorMatrix type="matrix" values="0.33 0.33 0.33 0 0  0.33 0.33 0.33 0 0  0.33 0.33 0.33 0 0  0 0 0 1 0" />
-          <feComponentTransfer colorInterpolationFilters="sRGB">
-            <feFuncR type="table" tableValues={`0 ${duotoneColor.r / 255}`} />
-            <feFuncG type="table" tableValues={`0 ${duotoneColor.g / 255}`} />
-            <feFuncB type="table" tableValues={`0 ${duotoneColor.b / 255}`} />
-          </feComponentTransfer>
-        </filter>
-      </svg>
       {/* Background Image */}
       <div className="absolute inset-0 z-0 overflow-hidden">
-        {/* Mobile Background */}
+        {/* Background */}
         <Image
           src="/hero_bg.png"
-          alt="Hero Background Mobile"
+          alt="Hero Background"
           fill
           priority
-          className="object-cover md:hidden"
-          style={{ filter: "url(#duotone)" }}
-        />
-        {/* Desktop Background */}
-        <Image
-          src="/hero_desktop.png"
-          alt="Hero Background Desktop"
-          fill
-          priority
-          className="object-cover hidden md:block"
-          style={{ filter: "url(#duotone)" }}
+          className="object-cover object-bottom"
         />
       </div>
-
-
 
       {/* Floating macOS Folders */}
       <div className="absolute inset-0 z-20 pointer-events-none">
@@ -669,8 +666,6 @@ export function Hero() {
           isMaximized={isMaximized}
           setIsMaximized={setIsMaximized}
           setActiveWindow={setActiveWindow}
-          duotoneColor={duotoneColor}
-          setDuotoneColor={setDuotoneColor}
         />
       )}
 
@@ -679,7 +674,7 @@ export function Hero() {
         initial={{ opacity: 0, y: 50 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
-        className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 rounded-[15px] p-2 flex items-center gap-2 bg-white/10 border border-white/20 backdrop-blur-xl shadow-2xl"
+        className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 rounded-[15px] px-4 py-2 flex items-center gap-4 bg-transparent border border-white/30 backdrop-blur-3xl shadow-[0_8px_32px_0_rgba(0,0,0,0.36)]"
       >
         {/* Resume Icon */}
         <div className="relative group flex items-center justify-center">
@@ -691,7 +686,7 @@ export function Hero() {
             onClick={() => toggleWindow("resume", false)}
           >
             <img
-              src="https://framerusercontent.com/images/VCIQF7ylF9U0o5QZkTgji0mxx28.png"
+              src="/resume.svg"
               alt="Resume"
               className="w-full h-full object-cover pointer-events-none"
               draggable={false}
@@ -705,62 +700,22 @@ export function Hero() {
             Assistant
           </div>
           <div
-            className="w-12 h-12 md:w-14 md:h-14 bg-zinc-900 rounded-[22.5%] shadow-sm flex items-center justify-center border border-white/20 hover:scale-110 transition-transform cursor-pointer overflow-hidden relative"
+            className="w-12 h-12 md:w-14 md:h-14 rounded-[22.5%] shadow-sm flex items-center justify-center border border-white/50 hover:scale-110 transition-transform cursor-pointer overflow-hidden"
             onClick={() => toggleWindow("assistant", false)}
           >
-            <div
-              className="absolute w-6 h-6 rounded-full bg-blue-500 blur-[8px] mix-blend-screen animate-pulse"
-              style={{ transform: "translate(-3px, -3px)" }}
-            ></div>
-            <div
-              className="absolute w-6 h-6 rounded-full bg-purple-500 blur-[8px] mix-blend-screen animate-pulse"
-              style={{
-                transform: "translate(3px, 3px)",
-                animationDelay: "0.5s",
-              }}
-            ></div>
-            <div
-              className="absolute w-6 h-6 rounded-full bg-pink-500 blur-[8px] mix-blend-screen animate-pulse"
-              style={{
-                transform: "translate(-3px, 3px)",
-                animationDelay: "1s",
-              }}
-            ></div>
-            <div
-              className="absolute w-6 h-6 rounded-full bg-cyan-400 blur-[8px] mix-blend-screen animate-pulse"
-              style={{
-                transform: "translate(3px, -3px)",
-                animationDelay: "1.5s",
-              }}
-            ></div>
-            <div className="absolute w-full h-full rounded-[22.5%] shadow-[inset_0_0_10px_rgba(255,255,255,0.2)] pointer-events-none"></div>
+            <img
+              src="/siri.png"
+              alt="Assistant"
+              className="w-full h-full object-cover pointer-events-none"
+              draggable={false}
+            />
           </div>
         </div>
 
-        {/* Finder Icon */}
-        <div className="relative group flex items-center justify-center">
-          <div className="absolute -top-12 px-3 py-1 bg-black/60 backdrop-blur-md text-white text-xs font-semibold rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow-lg border border-white/10 whitespace-nowrap">
-            Services
-          </div>
-          <div
-            className="w-12 h-12 md:w-14 md:h-14 rounded-[22.5%] shadow-sm flex overflow-hidden border border-white/50 hover:scale-110 transition-transform cursor-pointer relative bg-[#f0f0f0]"
-            onClick={() => toggleWindow("services", false)}
-          >
-            <div className="w-1/2 h-full bg-[#1e88e5]"></div>
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="w-full h-full relative">
-                {/* left eye */}
-                <div className="absolute left-[28%] top-[35%] w-1.5 h-2.5 bg-black rounded-full opacity-80"></div>
-                {/* right eye */}
-                <div className="absolute right-[28%] top-[35%] w-1.5 h-2.5 bg-black rounded-full opacity-80"></div>
-                {/* smile */}
-                <div className="absolute left-[20%] bottom-[25%] w-[60%] h-4 border-b-2 border-black rounded-[50%] opacity-80"></div>
-                {/* nose */}
-                <div className="absolute left-1/2 top-[30%] bottom-[35%] w-0.5 bg-black -translate-x-1/2 opacity-80"></div>
-              </div>
-            </div>
-          </div>
-        </div>
+        {/* Separator */}
+        <div className="w-[1px] h-10 bg-white/20 mx-1 rounded-full"></div>
+
+
 
         {/* Contact Icon */}
         <div className="relative group flex items-center justify-center">
@@ -772,7 +727,7 @@ export function Hero() {
             onClick={() => toggleWindow("contact", false)}
           >
             <img
-              src="https://framerusercontent.com/images/ZAH3C8amQUigspCjEG1FJWPjI.png"
+              src="/contact_image.avif"
               alt="Contact"
               className="w-full h-full object-cover pointer-events-none"
               draggable={false}
