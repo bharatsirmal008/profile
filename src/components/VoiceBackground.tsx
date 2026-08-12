@@ -23,6 +23,8 @@ export function VoiceBackground() {
       W = window.innerWidth;
       H = window.innerHeight;
 
+      if (!canvas) return;
+
       canvas.width = W;
       canvas.height = H;
     }
