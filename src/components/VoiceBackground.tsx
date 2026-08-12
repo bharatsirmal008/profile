@@ -7,36 +7,37 @@ export function VoiceBackground() {
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+
+    if (canvas === null) {
+      return;
+    }
 
     const ctx = canvas.getContext("2d");
-    if (!ctx) return;
 
-    // Initialize dimensions immediately so TypeScript knows
-    // W and H always have a value.
-    let W = window.innerWidth;
-    let H = window.innerHeight;
+    if (ctx === null) {
+      return;
+    }
 
-    let animationFrameId = 0;
+    let W: number = window.innerWidth;
+    let H: number = window.innerHeight;
 
-    function resize() {
+    let animationFrameId: number = 0;
+
+    const resize = (): void => {
       W = window.innerWidth;
       H = window.innerHeight;
 
-      if (!canvas) return;
-
       canvas.width = W;
       canvas.height = H;
-    }
+    };
 
     resize();
+
     window.addEventListener("resize", resize);
 
     /* ==========================================================
-       SOFT DUST PARTICLES
+       PARTICLES
     ========================================================== */
-
-    const particleCount = 70;
 
     type Particle = {
       x: number;
@@ -49,32 +50,31 @@ export function VoiceBackground() {
       hueMix: number;
     };
 
-    let particles: Particle[] = [];
+    const particleCount = 70;
 
-    function makeParticle(): Particle {
-      return {
-        x: Math.random() * W,
-        y: H + Math.random() * 100,
-        r: Math.random() * 1.8 + 0.4,
-        vy: Math.random() * 0.35 + 0.08,
-        vx: (Math.random() - 0.5) * 0.25,
-        baseAlpha: Math.random() * 0.5 + 0.15,
-        flicker: Math.random() * Math.PI * 2,
-        hueMix: Math.random(),
-      };
-    }
+    const particles: Particle[] = [];
 
-    // Initial particle distribution.
+    const makeParticle = (): Particle => ({
+      x: Math.random() * W,
+      y: H + Math.random() * 100,
+      r: Math.random() * 1.8 + 0.4,
+      vy: Math.random() * 0.35 + 0.08,
+      vx: (Math.random() - 0.5) * 0.25,
+      baseAlpha: Math.random() * 0.5 + 0.15,
+      flicker: Math.random() * Math.PI * 2,
+      hueMix: Math.random(),
+    });
+
     for (let i = 0; i < particleCount; i++) {
-      const p = makeParticle();
+      const particle = makeParticle();
 
-      p.y = Math.random() * H;
+      particle.y = Math.random() * H;
 
-      particles.push(p);
+      particles.push(particle);
     }
 
     /* ==========================================================
-       LIGHT STREAKS
+       STREAKS
     ========================================================== */
 
     type Streak = {
@@ -88,7 +88,7 @@ export function VoiceBackground() {
 
     let streaks: Streak[] = [];
 
-    function spawnStreak() {
+    const spawnStreak = (): void => {
       streaks.push({
         x: W * 0.25 + Math.random() * W * 0.5,
         y: H * 0.4 + Math.random() * H * 0.5,
@@ -97,7 +97,7 @@ export function VoiceBackground() {
         maxLife: Math.random() * 40 + 30,
         alpha: 0,
       });
-    }
+    };
 
     const streakInterval = window.setInterval(() => {
       if (Math.random() < 0.6) {
@@ -114,55 +114,58 @@ export function VoiceBackground() {
 
     const startTime = performance.now();
 
-    function tick(now: number) {
+    const tick = (now: number): void => {
       t += 0.016;
 
-      // Fade canvas in over approximately 2 seconds.
       const elapsed = (now - startTime) / 1000;
+
       globalAlpha = Math.min(1, elapsed / 2);
 
       ctx.clearRect(0, 0, W, H);
 
       ctx.save();
+
       ctx.globalAlpha = globalAlpha;
 
       /* ========================================================
          PARTICLES
       ======================================================== */
 
-      for (const p of particles) {
-        p.y -= p.vy;
+      for (const particle of particles) {
+        particle.y -= particle.vy;
 
-        p.x += p.vx + Math.sin(t * 0.5 + p.flicker) * 0.05;
+        particle.x += particle.vx + Math.sin(t * 0.5 + particle.flicker) * 0.05;
 
-        p.flicker += 0.01;
+        particle.flicker += 0.01;
 
-        if (p.y < -10) {
-          p.y = H + 10;
-          p.x = Math.random() * W;
+        if (particle.y < -10) {
+          particle.y = H + 10;
+          particle.x = Math.random() * W;
         }
 
-        if (p.x < -10) {
-          p.x = W + 10;
+        if (particle.x < -10) {
+          particle.x = W + 10;
         }
 
-        if (p.x > W + 10) {
-          p.x = -10;
+        if (particle.x > W + 10) {
+          particle.x = -10;
         }
 
-        const alpha = p.baseAlpha * (0.7 + 0.3 * Math.sin(t * 1.2 + p.flicker));
+        const alpha =
+          particle.baseAlpha *
+          (0.7 + 0.3 * Math.sin(t * 1.2 + particle.flicker));
 
-        const r = Math.round(20 + p.hueMix * 10);
+        const r = Math.round(20 + particle.hueMix * 10);
 
-        const g = Math.round(180 + p.hueMix * 75);
+        const g = Math.round(180 + particle.hueMix * 75);
 
-        const b = Math.round(90 + p.hueMix * 40);
+        const b = Math.round(90 + particle.hueMix * 40);
 
         ctx.beginPath();
 
         ctx.fillStyle = `rgba(${r},${g},${b},${alpha})`;
 
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.arc(particle.x, particle.y, particle.r, 0, Math.PI * 2);
 
         ctx.fill();
       }
@@ -171,37 +174,37 @@ export function VoiceBackground() {
          STREAKS
       ======================================================== */
 
-      streaks = streaks.filter((s) => s.life < s.maxLife);
+      streaks = streaks.filter((streak) => streak.life < streak.maxLife);
 
-      for (const s of streaks) {
-        s.life++;
+      for (const streak of streaks) {
+        streak.life++;
 
-        const progress = s.life / s.maxLife;
+        const progress = streak.life / streak.maxLife;
 
-        s.alpha = Math.sin(progress * Math.PI) * 0.35;
+        streak.alpha = Math.sin(progress * Math.PI) * 0.35;
 
-        const grad = ctx.createLinearGradient(
-          s.x,
-          s.y - s.len / 2,
-          s.x,
-          s.y + s.len / 2,
+        const gradient = ctx.createLinearGradient(
+          streak.x,
+          streak.y - streak.len / 2,
+          streak.x,
+          streak.y + streak.len / 2,
         );
 
-        grad.addColorStop(0, "rgba(20,255,140,0)");
+        gradient.addColorStop(0, "rgba(20,255,140,0)");
 
-        grad.addColorStop(0.5, `rgba(30,255,150,${s.alpha})`);
+        gradient.addColorStop(0.5, `rgba(30,255,150,${streak.alpha})`);
 
-        grad.addColorStop(1, "rgba(20,255,140,0)");
+        gradient.addColorStop(1, "rgba(20,255,140,0)");
 
-        ctx.strokeStyle = grad;
+        ctx.strokeStyle = gradient;
 
         ctx.lineWidth = 1;
 
         ctx.beginPath();
 
-        ctx.moveTo(s.x, s.y - s.len / 2);
+        ctx.moveTo(streak.x, streak.y - streak.len / 2);
 
-        ctx.lineTo(s.x, s.y + s.len / 2);
+        ctx.lineTo(streak.x, streak.y + streak.len / 2);
 
         ctx.stroke();
       }
@@ -209,7 +212,7 @@ export function VoiceBackground() {
       ctx.restore();
 
       animationFrameId = requestAnimationFrame(tick);
-    }
+    };
 
     animationFrameId = requestAnimationFrame(tick);
 
@@ -222,7 +225,7 @@ export function VoiceBackground() {
 
       window.clearInterval(streakInterval);
 
-      cancelAnimationFrame(animationFrameId);
+      window.cancelAnimationFrame(animationFrameId);
     };
   }, []);
 
