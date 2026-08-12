@@ -11,7 +11,8 @@ export function VoiceBackground() {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    let W: number, H: number;
+    let W = 0;
+    let H = 0;
     let animationFrameId: number;
 
     function resize() {
