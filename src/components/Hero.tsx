@@ -640,7 +640,7 @@ export function Hero() {
       <div className="absolute inset-0 z-0 overflow-hidden">
         {/* Background */}
         <Image
-          src="/hero_bg.png"
+          src="/background.webp"
           alt="Hero Background"
           fill
           priority
