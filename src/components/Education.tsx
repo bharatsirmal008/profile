@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { GraduationCap, MapPin, Award, Home, Menu, X, Minus, Maximize2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { LetterReveal } from "./LetterReveal";
 
 const educationData = [
   {
@@ -58,7 +59,9 @@ export function Education({ onClose, onMinimize, onMaximize }: EducationProps = 
           <button onClick={onClose} className="p-1.5 -ml-1.5 text-gray-600 hover:text-gray-900 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors">
             <Home className="w-[18px] h-[18px]" />
           </button>
-          <span className="font-semibold text-gray-900">Education</span>
+          <span className="font-semibold text-gray-900">
+            <LetterReveal text="Education" />
+          </span>
         </div>
         <button 
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -97,7 +100,7 @@ export function Education({ onClose, onMinimize, onMaximize }: EducationProps = 
 
         <div className="p-6 md:p-8 md:pt-4">
           <h2 className="text-[13px] font-semibold text-gray-400 uppercase tracking-wider mb-6 px-3">
-            Organizations
+            <LetterReveal text="Organizations" />
           </h2>
           <nav className="flex flex-col gap-1">
             {educationData.map((edu, index) => {
@@ -161,7 +164,7 @@ export function Education({ onClose, onMinimize, onMaximize }: EducationProps = 
               {/* Header: Title */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                 <h1 className="text-3xl md:text-[38px] leading-tight font-semibold text-gray-900 tracking-tight">
-                  {activeEdu.degree}
+                  <LetterReveal text={activeEdu.degree} />
                 </h1>
               </div>
 
@@ -184,18 +187,28 @@ export function Education({ onClose, onMinimize, onMaximize }: EducationProps = 
               {/* Metadata Columns */}
               <div className="flex flex-col sm:flex-row gap-12 sm:gap-24 mb-16">
                 <div>
-                  <h3 className="text-[15px] font-medium text-gray-400 mb-2">Level</h3>
-                  <p className="text-[17px] font-medium text-gray-700">{activeEdu.level}</p>
+                  <h3 className="text-[15px] font-medium text-gray-400 mb-2">
+                    <LetterReveal text="Level" />
+                  </h3>
+                  <p className="text-[17px] font-medium text-gray-700">
+                    {activeEdu.level}
+                  </p>
                 </div>
                 <div>
-                  <h3 className="text-[15px] font-medium text-gray-400 mb-2">Year</h3>
-                  <p className="text-[17px] font-medium text-gray-700">{activeEdu.year}</p>
+                  <h3 className="text-[15px] font-medium text-gray-400 mb-2">
+                    <LetterReveal text="Year" />
+                  </h3>
+                  <p className="text-[17px] font-medium text-gray-700">
+                    {activeEdu.year}
+                  </p>
                 </div>
               </div>
 
               {/* Skills */}
               <div>
-                <h3 className="text-[15px] font-medium text-gray-400 mb-4">Key Coursework / Skills</h3>
+                <h3 className="text-[15px] font-medium text-gray-400 mb-4">
+                  <LetterReveal text="Key Coursework / Skills" />
+                </h3>
                 <div className="flex flex-wrap gap-2">
                   {activeEdu.skills.map((skill, idx) => (
                     <span 

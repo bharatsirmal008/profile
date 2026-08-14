@@ -1,53 +1,94 @@
 "use client";
 
-import React from "react";
+import React, { useRef } from "react";
+import { Download } from "lucide-react";
+import { LetterReveal } from "./LetterReveal";
+import { useReactToPrint } from "react-to-print";
 
 export function Resume() {
+  const contentRef = useRef<HTMLDivElement>(null);
+  const handleDownloadPDF = useReactToPrint({ 
+    contentRef,
+    documentTitle: "Bharat_Sirmal_Resume",
+    pageStyle: "@page { size: auto; margin: 10mm; } @media print { html, body { font-family: 'Times New Roman', Times, serif; font-size: 14px !important; color: black !important; zoom: 0.9; } }"
+  });
+
   return (
-    <div className="w-full h-full bg-white font-sans text-gray-900 overflow-y-auto relative">
-      <div className="max-w-4xl mx-auto p-8 md:p-12 lg:p-16 pb-32 flex flex-col gap-14">
+    <div className="w-full h-full bg-white text-black overflow-y-auto relative" style={{ fontFamily: "'Times New Roman', Times, serif" }}>
+      <div ref={contentRef} className="max-w-4xl mx-auto p-8 md:p-12 lg:p-16 pb-32 print:p-0 flex flex-col gap-6 print:gap-3 relative bg-white leading-relaxed">
         
         {/* Header */}
-        <header className="flex flex-col gap-4 border-b border-gray-100 pb-10">
-          <h1 className="text-4xl md:text-[42px] font-bold tracking-tight text-gray-900">
-            BHARAT SIRMAL
+        <header className="flex flex-col items-center justify-center relative mb-2 print:mb-0">
+          <button 
+            onClick={() => handleDownloadPDF()}
+            className="absolute right-0 top-0 flex items-center gap-2 px-4 py-2 bg-gray-900 text-white font-sans text-sm font-semibold rounded-lg hover:bg-gray-800 transition-colors shadow-sm print:hidden"
+          >
+            <Download className="w-4 h-4" />
+            Download Resume
+          </button>
+          
+          <h1 className="text-3xl md:text-4xl print:text-2xl font-bold tracking-tight text-center uppercase mb-3">
+            <LetterReveal text="BHARAT SIRMAL" />
           </h1>
-          <div className="flex flex-wrap items-center gap-3 text-[15px] font-medium text-gray-500">
-            <a href="mailto:sirmalbharat99@gmail.com" className="hover:text-gray-900 transition-colors">sirmalbharat99@gmail.com</a>
-            <span className="text-gray-300">•</span>
-            <a href="https://www.linkedin.com/in/bharat-sirmal/" target="_blank" rel="noopener noreferrer" className="hover:text-gray-900 transition-colors">LinkedIn</a>
-            <span className="text-gray-300">•</span>
-            <a href="https://github.com/bharatsirmal008" target="_blank" rel="noopener noreferrer" className="hover:text-gray-900 transition-colors">GitHub</a>
-            <span className="text-gray-300">•</span>
-            <a href="#" className="hover:text-gray-900 transition-colors">Portfolio</a>
-            <span className="text-gray-300">•</span>
-            <span className="text-gray-700">Mumbai, Maharashtra, India</span>
+          
+          <div className="flex flex-wrap justify-center items-center gap-1.5 text-[14px] font-medium">
+            <a href="mailto:sirmalbharat99@gmail.com" className="hover:underline">
+              sirmalbharat99@gmail.com
+            </a>
+            <span>|</span>
+            <a href="https://www.linkedin.com/in/bharat-sirmal/" target="_blank" rel="noopener noreferrer" className="hover:underline">
+              Linkedin
+            </a>
+            <span>|</span>
+            <a href="https://github.com/bharatsirmal008" target="_blank" rel="noopener noreferrer" className="hover:underline">
+              Github
+            </a>
+            <span>|</span>
+            <a href="#" className="hover:underline">
+              Portfolio-Bharat Sirmal
+            </a>
+            <span>|</span>
+            <span>
+              Mumbai, Maharashtra, India
+            </span>
           </div>
         </header>
 
         {/* Education */}
         <section>
-          <h2 className="text-sm font-bold tracking-widest text-gray-400 uppercase mb-6">Education</h2>
-          <div className="flex flex-col gap-6">
-            <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-2">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">B.Tech in Computer Science</h3>
-                <p className="text-[15px] font-medium text-gray-600">Pillai College of Engineering, Panvel</p>
+          <h2 className="text-lg font-bold uppercase mb-3 print:mb-2 border-b-2 border-black pb-1">
+            <LetterReveal text="EDUCATION" />
+          </h2>
+          <div className="flex flex-col gap-4 print:gap-1 text-[14px]">
+            <div>
+              <div className="flex justify-between items-start">
+                <div>
+                  <strong>B.Tech in Computer Science</strong>
+                  <span className="mx-1">—</span>
+                  <span>Pillai College of Engineering, Panvel</span>
+                </div>
+                <div className="italic shrink-0 ml-4">
+                  2023 – 2027
+                </div>
               </div>
-              <div className="text-left md:text-right">
-                <p className="text-[15px] font-medium text-gray-500">2023 – 2027</p>
-                <p className="text-sm font-semibold text-gray-900 mt-0.5">CGPA: 8.74 / 10.0</p>
+              <div className="mt-0.5">
+                CGPA: 8.74 / 10.0
               </div>
             </div>
             
-            <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-2">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">Class 12 (Higher Secondary)</h3>
-                <p className="text-[15px] font-medium text-gray-600">KMC Balkumari, Lalitpur, Nepal</p>
+            <div>
+              <div className="flex justify-between items-start">
+                <div>
+                  <strong>Class 12 (Higher Secondary)</strong>
+                  <span className="mx-1">—</span>
+                  <span>KMC Balkumari, Lalitpur Nepal</span>
+                </div>
+                <div className="italic shrink-0 ml-4">
+                  2020 – 2022
+                </div>
               </div>
-              <div className="text-left md:text-right">
-                <p className="text-[15px] font-medium text-gray-500">2020 – 2022</p>
-                <p className="text-sm font-semibold text-gray-900 mt-0.5">GPA: 3.14 / 4.0</p>
+              <div className="mt-0.5">
+                GPA: 3.14 / 4.0
               </div>
             </div>
           </div>
@@ -55,56 +96,78 @@ export function Resume() {
 
         {/* Skills */}
         <section>
-          <h2 className="text-sm font-bold tracking-widest text-gray-400 uppercase mb-6">Skills</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-8">
-            <div className="flex flex-col">
-              <span className="text-[13px] font-bold text-gray-400 uppercase tracking-wider mb-1">Programming Languages</span>
-              <span className="text-[15px] font-medium text-gray-800">Python, JavaScript, C++, SQL</span>
+          <h2 className="text-lg font-bold uppercase mb-3 print:mb-2 border-b-2 border-black pb-1">
+            <LetterReveal text="SKILLS" />
+          </h2>
+          <div className="flex flex-col gap-1 print:gap-0.5 text-[14px]">
+            <div>
+              <strong>Programming Languages:</strong>
+              <span className="ml-1">Python, JavaScript,C++, SQL</span>
             </div>
-            <div className="flex flex-col">
-              <span className="text-[13px] font-bold text-gray-400 uppercase tracking-wider mb-1">Data & Databases</span>
-              <span className="text-[15px] font-medium text-gray-800">MongoDB, MySQL, SQL querying</span>
+            <div>
+              <strong>Data & Databases:</strong>
+              <span className="ml-1">MongoDB, MySQL, SQL querying</span>
             </div>
-            <div className="flex flex-col">
-              <span className="text-[13px] font-bold text-gray-400 uppercase tracking-wider mb-1">Productivity & Tools</span>
-              <span className="text-[15px] font-medium text-gray-800">Microsoft Excel, Google Sheets, Postman, GitHub, Cloudinary</span>
+            <div>
+              <strong>Productivity & Tools:</strong>
+              <span className="ml-1">Microsoft Excel, Google Sheets, Postman, GitHub, Cloudinary</span>
             </div>
-            <div className="flex flex-col">
-              <span className="text-[13px] font-bold text-gray-400 uppercase tracking-wider mb-1">Cloud & Platforms</span>
-              <span className="text-[15px] font-medium text-gray-800">Google Cloud (Data Analytics), Firebase, Vercel</span>
+            <div>
+              <strong>Cloud & Platforms:</strong>
+              <span className="ml-1">Google Cloud (Data Analytics), Firebase, Vercel</span>
             </div>
           </div>
         </section>
 
         {/* Projects */}
         <section>
-          <h2 className="text-sm font-bold tracking-widest text-gray-400 uppercase mb-6">Projects</h2>
-          <div className="flex flex-col gap-10">
+          <h2 className="text-lg font-bold uppercase mb-3 print:mb-2 border-b-2 border-black pb-1">
+            <LetterReveal text="PROJECTS" />
+          </h2>
+          <div className="flex flex-col gap-5 print:gap-2 text-[14px]">
             
             {/* YAOP */}
             <div>
-              <div className="mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">YAOP Community Platform</h3>
-                <p className="text-[14px] font-medium text-gray-500 mt-1">Next.js, Express.js, MongoDB, Firebase, Cloudinary</p>
-              </div>
-              <ul className="space-y-2.5 text-[15px] text-gray-600 leading-relaxed list-disc list-outside ml-4">
-                <li className="pl-1">Designed and managed a centralized MongoDB database, organizing structured data for events and volunteers with full accuracy and consistency across all records.</li>
-                <li className="pl-1">Processed and validated donation entries with complete data integrity by implementing Firebase authentication and structured data workflows.</li>
-                <li className="pl-1">Built an admin dashboard that streamlined data entry and record updates, reducing manual effort by ~40% and minimizing input errors.</li>
+              <strong className="block mb-1">
+                YAOP Community Platform
+              </strong>
+              <ul className="list-disc ml-5 space-y-1">
+                <li className="pl-1">
+                  Designed and managed a centralized MongoDB database, organizing structured data for events and volunteers with full accuracy and consistency across all records.
+                </li>
+                <li className="pl-1">
+                  Processed and validated donation entries with complete data integrity by implementing Firebase authentication and structured data workflows.
+                </li>
+                <li className="pl-1">
+                  Built an admin dashboard that streamlined data entry and record updates, reducing manual effort by ~40% and minimizing input errors.
+                </li>
+                <li className="pl-1">
+                  Technologies: Next.js, Express.js, MongoDB, Firebase, Cloudinary
+                </li>
               </ul>
             </div>
 
             {/* FrameForge */}
             <div>
-              <div className="mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">FrameForge Gaming Platform</h3>
-                <p className="text-[14px] font-medium text-gray-500 mt-1">React.js, Express.js, MongoDB, Firebase, REST APIs, Postman</p>
-              </div>
-              <ul className="space-y-2.5 text-[15px] text-gray-600 leading-relaxed list-disc list-outside ml-4">
-                <li className="pl-1">Designed and maintained structured MongoDB schemas for users, products, and orders, ensuring clean, queryable, and consistent records.</li>
-                <li className="pl-1">Engineered RESTful APIs to handle high-volume CRUD (create, read, update, delete) data operations reliably and efficiently.</li>
-                <li className="pl-1">Implemented role-based data access control, enforcing strict segregation between admin and user records with zero unauthorized access.</li>
-                <li className="pl-1">Conducted data validation and performance testing using Postman to verify the accuracy and integrity of all API data flows. Collaborated in a 4-member team using Git for version control and task coordination.</li>
+              <strong className="block mb-1">
+                FrameForge Gaming Platform
+              </strong>
+              <ul className="list-disc ml-5 space-y-1">
+                <li className="pl-1">
+                  Designed and maintained structured MongoDB schemas for users, products, and orders, ensuring clean, queryable, and consistent records.
+                </li>
+                <li className="pl-1">
+                  Engineered RESTful APIs to handle high-volume CRUD (create, read, update, delete) data operations reliably and efficiently.
+                </li>
+                <li className="pl-1">
+                  Implemented role-based data access control, enforcing strict segregation between admin and user records with zero unauthorized access.
+                </li>
+                <li className="pl-1">
+                  Conducted data validation and performance testing using Postman to verify the accuracy and integrity of all API data flows.Collaborated in a 4-member team using Git for version control and task coordination.
+                </li>
+                <li className="pl-1">
+                  Technologies: React.js, Express.js, MongoDB, Firebase, REST APIs, Postman
+                </li>
               </ul>
             </div>
           </div>
@@ -112,39 +175,42 @@ export function Resume() {
 
         {/* Internship */}
         <section>
-          <h2 className="text-sm font-bold tracking-widest text-gray-400 uppercase mb-6">Internship</h2>
-          <div>
-            <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-2 mb-3">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">Web Development Internship</h3>
-                <p className="text-[15px] font-medium text-gray-600 mt-0.5">InAmigos Foundation</p>
-              </div>
-              <div className="text-left md:text-right text-[15px] font-medium text-gray-500">
-                May 2026 – Jun 2026
-              </div>
+          <h2 className="text-lg font-bold uppercase mb-3 print:mb-2 border-b-2 border-black pb-1">
+            <LetterReveal text="INTERNSHIP" />
+          </h2>
+          <div className="text-[14px]">
+            <div className="mb-1">
+              <strong>Web Development Internship</strong>
+              <span className="mx-1">|</span>
+              <span>May 2026 – Jun 2026</span>
             </div>
-            <p className="text-[15px] text-gray-600 leading-relaxed mb-4">
+            <div className="mb-1">
+              Company Name: InAmigos Foundation
+            </div>
+            <p className="mb-1">
               Assisted in developing and maintaining the organization's website using HTML, CSS, and JavaScript. Designed and implemented new features to enhance site functionality, and improved the layout and structure to make the website more visually attractive and easier to manage.
             </p>
-            <p className="text-[14px] font-medium text-gray-500">
-              Technology Used: HTML, CSS, JavaScript, React, Node.js, MongoDB
-            </p>
+            <div>
+              Technology Used: HTML, CSS, JavaScript,React, Node.js, MongoDB
+            </div>
           </div>
         </section>
 
         {/* Certifications & Achievements */}
         <section>
-          <h2 className="text-sm font-bold tracking-widest text-gray-400 uppercase mb-6">Certifications & Achievements</h2>
-          <ul className="space-y-4 text-[15px] text-gray-600 leading-relaxed list-disc list-outside ml-4">
+          <h2 className="text-lg font-bold uppercase mb-3 print:mb-2 border-b-2 border-black pb-1">
+            <LetterReveal text="CERTIFICATIONS & ACHIEVEMENTS" />
+          </h2>
+          <ul className="list-disc ml-5 space-y-2 print:space-y-0.5 text-[14px]">
             <li className="pl-1">
-              <strong className="text-gray-800 font-semibold block sm:inline">Google Cloud Data Analytics Certificate </strong> 
-              <span className="hidden sm:inline text-gray-400 mx-1">—</span> 
-              <span className="block sm:inline mt-1 sm:mt-0">Hands-on experience with cloud-based data pipelines, data analysis, and structured reporting tools.</span>
+              <strong>Google Cloud Data Analytics Certificate</strong>
+              <span className="mx-1">—</span>
+              <span>Hands-on experience with cloud-based data pipelines, data analysis, and structured reporting tools.</span>
             </li>
             <li className="pl-1">
-              <strong className="text-gray-800 font-semibold block sm:inline">Google Cloud Career Launchpad (Foundations Track) </strong> 
-              <span className="hidden sm:inline text-gray-400 mx-1">—</span> 
-              <span className="block sm:inline mt-1 sm:mt-0">Training in cloud computing fundamentals, data management, and analytics best practices.</span>
+              <strong>Google Cloud Career Launchpad (Foundations Track)</strong>
+              <span className="mx-1">—</span>
+              <span>Training in cloud computing fundamentals, data management, and analytics best practices.</span>
             </li>
           </ul>
         </section>

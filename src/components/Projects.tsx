@@ -6,6 +6,7 @@ import Link from "next/link";
 import { projects } from "@/lib/projects";
 import { Globe, Home, ExternalLink, Menu, X, Minus, Maximize2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { LetterReveal } from "./LetterReveal";
 
 interface ProjectsProps {
   onClose?: () => void;
@@ -28,7 +29,9 @@ export function Projects({ onClose, onMinimize, onMaximize }: ProjectsProps = {}
           <button onClick={onClose} className="p-1.5 -ml-1.5 text-gray-600 hover:text-gray-900 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors">
             <Home className="w-[18px] h-[18px]" />
           </button>
-          <span className="font-semibold text-gray-900">Projects</span>
+          <span className="font-semibold text-gray-900">
+            <LetterReveal text="Projects" />
+          </span>
         </div>
         <button 
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -67,7 +70,7 @@ export function Projects({ onClose, onMinimize, onMaximize }: ProjectsProps = {}
 
         <div className="p-6 md:p-8 md:pt-4">
           <h2 className="text-[13px] font-semibold text-gray-400 uppercase tracking-wider mb-6 px-3">
-            Projects
+            <LetterReveal text="Projects" />
           </h2>
           <nav className="flex flex-col gap-1">
             {projects.map((project, index) => {
@@ -128,7 +131,7 @@ export function Projects({ onClose, onMinimize, onMaximize }: ProjectsProps = {}
               {/* Header: Title & Visit Link */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                 <h1 className="text-4xl md:text-[42px] font-semibold text-gray-900 tracking-tight">
-                  {activeProject.title}
+                  <LetterReveal text={activeProject.title} />
                 </h1>
                 
                 {activeProject.liveLink && (
@@ -152,12 +155,20 @@ export function Projects({ onClose, onMinimize, onMaximize }: ProjectsProps = {}
               {/* Metadata Columns */}
               <div className="flex flex-col sm:flex-row gap-12 sm:gap-24 mb-16">
                 <div>
-                  <h3 className="text-[15px] font-medium text-gray-400 mb-2">Category</h3>
-                  <p className="text-[17px] font-medium text-gray-700">{activeProject.category}</p>
+                  <h3 className="text-[15px] font-medium text-gray-400 mb-2">
+                    <LetterReveal text="Category" />
+                  </h3>
+                  <p className="text-[17px] font-medium text-gray-700">
+                    {activeProject.category}
+                  </p>
                 </div>
                 <div>
-                  <h3 className="text-[15px] font-medium text-gray-400 mb-2">Client</h3>
-                  <p className="text-[17px] font-medium text-gray-700">{activeProject.client}</p>
+                  <h3 className="text-[15px] font-medium text-gray-400 mb-2">
+                    <LetterReveal text="Client" />
+                  </h3>
+                  <p className="text-[17px] font-medium text-gray-700">
+                    {activeProject.client}
+                  </p>
                 </div>
               </div>
 

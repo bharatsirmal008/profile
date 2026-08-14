@@ -28,6 +28,7 @@ import { SkillsMarquee } from "@/components/SkillsMarquee";
 import { Contact } from "@/components/Contact";
 import { Resume } from "@/components/Resume";
 import { Assistant } from "@/components/Assistant";
+import { LetterReveal } from "./LetterReveal";
 
 const FOLDERS = [
   {
@@ -237,7 +238,7 @@ function DraggableFolder({
       <span
         className={`text-white text-sm font-medium tracking-wide drop-shadow-md mt-1 pointer-events-none transition-opacity ${isDragMode ? "opacity-80" : "opacity-100"}`}
       >
-        {folder.label}
+        <LetterReveal text={folder.label} />
       </span>
     </motion.div>
   );
@@ -438,7 +439,7 @@ function DraggableWindow({
           : "max-md:!inset-0 max-md:!w-full max-md:!h-full max-md:!rounded-none " +
             (isCentered
               ? activeWindow === "assistant"
-                ? "top-[10%] left-0 right-0 mx-auto w-[95vw] max-w-[700px] h-[75vh] max-h-[calc(100vh-160px)] rounded-[10px]"
+                ? "top-[5%] left-0 right-0 mx-auto w-[95vw] max-w-[550px] h-[85vh] max-h-[calc(100vh-100px)] rounded-[10px]"
                 : activeWindow === "contact"
                   ? "top-[10%] left-0 right-0 mx-auto w-[95vw] max-w-[750px] h-auto max-h-[calc(100vh-160px)] rounded-[10px]"
                   : activeWindow === "resume" || activeWindow === "about"
@@ -446,7 +447,7 @@ function DraggableWindow({
                     : "top-[10%] left-[15%] w-[70vw] h-[75vh] rounded-2xl"
               : // Absolute positioned layout (stripped of top/left/right/mx-auto)
                 activeWindow === "assistant"
-                ? "w-[95vw] max-w-[700px] h-[75vh] max-h-[calc(100vh-160px)] rounded-[10px]"
+                ? "w-[95vw] max-w-[550px] h-[85vh] max-h-[calc(100vh-100px)] rounded-[10px]"
                 : activeWindow === "contact"
                   ? "w-[95vw] max-w-[750px] h-auto max-h-[calc(100vh-160px)] rounded-[10px]"
                   : activeWindow === "resume" || activeWindow === "about"
@@ -541,12 +542,12 @@ function DraggableWindow({
                   className="bg-gradient-to-r from-cyan-300 via-white to-orange-400 text-transparent bg-clip-text bg-[length:200%_auto] animate-gradient-x drop-shadow-sm"
                   style={{ fontFamily: "'Amarna', sans-serif" }}
                 >
-                  JOJO
+                  <LetterReveal text="JOJO" />
                 </span>
               </div>
             ) : (
               <div className="flex-1 text-center font-bold text-sm text-zinc-700 capitalize pr-10 pointer-events-none">
-                {activeWindow}
+                <LetterReveal text={activeWindow} />
               </div>
             )}
           </div>
@@ -634,17 +635,17 @@ export function Hero() {
   return (
     <section
       ref={containerRef}
-      className="relative h-[100dvh] w-full overflow-hidden bg-[#0a0b0d] font-sans selection:bg-black selection:text-white"
+      className="relative h-[100dvh] w-full overflow-hidden bg-[#0a0b0d] font-sans selection:bg-black selection:text-white border-[10px] border-white"
     >
       {/* Background Image */}
       <div className="absolute inset-0 z-0 overflow-hidden">
         {/* Background */}
         <Image
-          src="/background.webp"
+          src="/hero.png"
           alt="Hero Background"
           fill
           priority
-          className="object-cover object-bottom"
+          className="object-cover object-center"
         />
       </div>
 

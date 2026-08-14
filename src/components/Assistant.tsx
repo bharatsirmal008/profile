@@ -1243,8 +1243,8 @@ export function Assistant() {
         overflow-hidden
         rounded-[10px]
         bg-transparent
+        zeyada-regular
       "
-      style={{ fontFamily: "'Amarna', sans-serif" }}
     >
       <div className="absolute inset-0 z-0 pointer-events-none rounded-[10px] overflow-hidden">
         <VoiceBackground />
@@ -1279,7 +1279,7 @@ export function Assistant() {
           <span
             className="
               px-4
-              text-[13px]
+              text-[20px]
               text-gray-300
               font-medium
             "
@@ -1341,7 +1341,9 @@ export function Assistant() {
                 >
                   <p
                     className="
-                        text-[15px]
+                        zeyada-regular
+                        text-[24px]
+                        tracking-wide
                         leading-relaxed
                         whitespace-pre-wrap
                       "
@@ -1361,7 +1363,7 @@ export function Assistant() {
                 >
                   <span
                     className="
-                        text-[12px]
+                        text-[18px]
                         text-gray-300
                         font-medium
                       "
@@ -1602,7 +1604,7 @@ export function Assistant() {
             className="
               flex-1
               bg-transparent
-              text-[15px]
+              text-[22px]
               text-white
               placeholder:text-gray-400
               outline-none
@@ -1700,7 +1702,7 @@ export function Assistant() {
         <p
           className="
             text-center
-            text-[11px]
+            text-[18px]
             text-gray-300
             mt-2
           "

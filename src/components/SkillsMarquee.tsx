@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { LayoutTemplate, Database, Home, Menu, X, Minus, Maximize2, TerminalSquare } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { LetterReveal } from "./LetterReveal";
 
 const skillsData = [
   {
@@ -137,7 +138,9 @@ export function SkillsMarquee({ isMaximized = false, onClose, onMinimize, onMaxi
           <button onClick={onClose} className="p-1.5 -ml-1.5 text-gray-600 hover:text-gray-900 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors">
             <Home className="w-[18px] h-[18px]" />
           </button>
-          <span className="font-semibold text-gray-900">Technical Skills</span>
+          <span className="font-semibold text-gray-900">
+            <LetterReveal text="Technical Skills" />
+          </span>
         </div>
         <button 
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -176,7 +179,7 @@ export function SkillsMarquee({ isMaximized = false, onClose, onMinimize, onMaxi
 
         <div className="p-6 md:p-8 md:pt-4">
           <h2 className="text-[13px] font-semibold text-gray-400 uppercase tracking-wider mb-6 px-3">
-            Technical Skills
+            <LetterReveal text="Technical Skills" />
           </h2>
           <nav className="flex flex-col gap-1">
             {skillsData.map((category, index) => {
@@ -240,7 +243,7 @@ export function SkillsMarquee({ isMaximized = false, onClose, onMinimize, onMaxi
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                 <h1 className="text-3xl md:text-[38px] leading-tight font-semibold text-gray-900 tracking-tight flex items-center gap-3">
                   <activeCategory.icon className="w-8 h-8 text-gray-700" />
-                  {activeCategory.title}
+                  <LetterReveal text={activeCategory.title} />
                 </h1>
               </div>
 
@@ -265,22 +268,32 @@ export function SkillsMarquee({ isMaximized = false, onClose, onMinimize, onMaxi
                     
                     <div className="flex flex-col gap-2 flex-1">
                       <h3 className="text-xl font-bold text-gray-900 tracking-tight">
-                        {skill.name}
+                        <LetterReveal text={skill.name} />
                       </h3>
                       
                       <div className="space-y-4 mt-2">
                         <div>
-                          <span className="text-[12px] font-bold uppercase tracking-wider text-gray-400 block mb-1">What it is</span>
-                          <p className="text-[15px] text-gray-700 leading-relaxed">{skill.description}</p>
+                          <span className="text-[12px] font-bold uppercase tracking-wider text-gray-400 block mb-1">
+                            What it is
+                          </span>
+                          <p className="text-[15px] text-gray-700 leading-relaxed">
+                            {skill.description}
+                          </p>
                         </div>
                         
                         <div>
-                          <span className="text-[12px] font-bold uppercase tracking-wider text-gray-400 block mb-1">How & Where it's used</span>
-                          <p className="text-[15px] text-gray-700 leading-relaxed">{skill.usage}</p>
+                          <span className="text-[12px] font-bold uppercase tracking-wider text-gray-400 block mb-1">
+                            How & Where it's used
+                          </span>
+                          <p className="text-[15px] text-gray-700 leading-relaxed">
+                            {skill.usage}
+                          </p>
                         </div>
 
                         <div>
-                          <span className="text-[12px] font-bold uppercase tracking-wider text-gray-400 block mb-2">Real-Life Examples</span>
+                          <span className="text-[12px] font-bold uppercase tracking-wider text-gray-400 block mb-2">
+                            Real-Life Examples
+                          </span>
                           <div className="flex flex-wrap gap-2">
                             {skill.examples.map((ex, i) => (
                               <span key={i} className="px-3 py-1 bg-white border border-gray-200 text-gray-600 text-[13px] font-medium rounded-full shadow-sm">

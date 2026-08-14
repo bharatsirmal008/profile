@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { CheckCircle2, AlertCircle, Loader2, Instagram, Github, Phone, Mail, Linkedin } from "lucide-react";
+import { LetterReveal } from "./LetterReveal";
 
 export function Contact() {
    const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
@@ -43,8 +44,12 @@ export function Contact() {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12">
           {/* Info */}
           <div>
-            <h1 className="text-3xl md:text-4xl font-semibold text-gray-900 mb-1 tracking-tight">Bharat Sirmal</h1>
-            <h2 className="text-lg text-gray-500 font-medium">Computer Science Student <span className="text-gray-300 mx-1">|</span> Let's Connect</h2>
+            <h1 className="text-3xl md:text-4xl font-semibold text-gray-900 mb-1 tracking-tight">
+              <LetterReveal text="Bharat Sirmal" />
+            </h1>
+            <h2 className="text-lg text-gray-500 font-medium">
+              <LetterReveal text="Computer Science Student" /> <span className="text-gray-300 mx-1">|</span> <LetterReveal text="Let's Connect" />
+            </h2>
           </div>
 
 
@@ -52,14 +57,18 @@ export function Contact() {
 
         {/* Form Section */}
         <div className="flex-1 w-full">
-          <h3 className="text-xl font-semibold text-gray-500 mb-8">Get In Touch:</h3>
+          <h3 className="text-xl font-semibold text-gray-500 mb-8">
+            <LetterReveal text="Get In Touch:" />
+          </h3>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <input type="hidden" name="access_key" value="5b5777a6-cb08-4eba-bec2-96f80487542f" />
             <input type="hidden" name="to_email" value="sirmalbharat99@gmail.com" />
 
             <div>
-              <label className="block text-sm font-semibold text-gray-600 mb-2">Name *</label>
+              <label className="block text-sm font-semibold text-gray-600 mb-2">
+                Name *
+              </label>
               <input
                 name="name"
                 type="text"
@@ -70,7 +79,9 @@ export function Contact() {
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-600 mb-2">Email *</label>
+              <label className="block text-sm font-semibold text-gray-600 mb-2">
+                Email *
+              </label>
               <input
                 name="email"
                 type="email"
@@ -81,7 +92,9 @@ export function Contact() {
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-600 mb-2">Message</label>
+              <label className="block text-sm font-semibold text-gray-600 mb-2">
+                Message
+              </label>
               <textarea
                 name="message"
                 required
