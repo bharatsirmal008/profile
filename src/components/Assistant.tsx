@@ -3,7 +3,6 @@
 import React, { useState, useRef, useEffect } from "react";
 
 import {
-  MoreHorizontal,
   Send,
   ThumbsUp,
   ThumbsDown,
@@ -12,12 +11,12 @@ import {
   Mic,
   Volume2,
   VolumeX,
-  Phone,
   PhoneOff,
   X,
 } from "lucide-react";
 
 import { motion } from "framer-motion";
+
 import RobotLoader from "@/components/RobotLoader";
 import { VoiceBackground } from "@/components/VoiceBackground";
 
@@ -57,12 +56,17 @@ type SpeechRecognitionConstructor = new () => SpeechRecognitionInstance;
    ANIMATED SOUND BARS
 ============================================================ */
 
-const AnimatedSoundBars = ({ isAnimating, onClick }: { isAnimating: boolean, onClick: () => void }) => {
-  // Scaled down heights to fit nicely in the modal
+const AnimatedSoundBars = ({
+  isAnimating,
+  onClick,
+}: {
+  isAnimating: boolean;
+  onClick: () => void;
+}) => {
   const heights = [48, 69, 90, 58, 34, 70, 90, 70, 58, 36];
-  
+
   return (
-    <button 
+    <button
       onClick={onClick}
       className="flex items-center justify-center gap-2 h-[120px] bg-transparent border-none cursor-pointer outline-none hover:scale-105 transition-transform my-4"
       title="End voice conversation"
@@ -70,24 +74,35 @@ const AnimatedSoundBars = ({ isAnimating, onClick }: { isAnimating: boolean, onC
       {heights.map((h, i) => {
         const duration = (0.9 + (i % 3) * 0.2).toFixed(2);
         const delay = (i * 0.07).toFixed(2);
+
         return (
           <div
             key={i}
             className="relative w-[12px] rounded-full bg-transparent border-[2px] border-[#14ff82] origin-center"
             style={{
               height: `${h}px`,
-              boxShadow: "0 0 6px rgba(20,255,130,0.8), inset 0 0 4px rgba(20,255,130,0.25)",
-              animation: isAnimating ? `sound-bounce ${duration}s ease-in-out ${delay}s infinite` : 'none',
+              boxShadow:
+                "0 0 6px rgba(20,255,130,0.8), inset 0 0 4px rgba(20,255,130,0.25)",
+              animation: isAnimating
+                ? `sound-bounce ${duration}s ease-in-out ${delay}s infinite`
+                : "none",
             }}
           >
             <div className="absolute inset-0 rounded-full bg-[#14ff82]/10" />
           </div>
         );
       })}
+
       <style jsx>{`
         @keyframes sound-bounce {
-          0%, 100% { transform: scaleY(1); }
-          50% { transform: scaleY(0.4); }
+          0%,
+          100% {
+            transform: scaleY(1);
+          }
+
+          50% {
+            transform: scaleY(0.4);
+          }
         }
       `}</style>
     </button>
@@ -161,6 +176,7 @@ function VoiceThinkingState({
       "
     >
       <VoiceBackground />
+
       <style>{`
         .voice-card {
           position: relative;
@@ -391,14 +407,17 @@ function VoiceThinkingState({
         .dark-scrollbar::-webkit-scrollbar {
           width: 6px;
         }
+
         .dark-scrollbar::-webkit-scrollbar-track {
           background: rgba(255, 255, 255, 0.05);
           border-radius: 4px;
         }
+
         .dark-scrollbar::-webkit-scrollbar-thumb {
           background: rgba(255, 255, 255, 0.2);
           border-radius: 4px;
         }
+
         .dark-scrollbar::-webkit-scrollbar-thumb:hover {
           background: rgba(255, 255, 255, 0.3);
         }
@@ -416,16 +435,18 @@ function VoiceThinkingState({
         </div>
 
         <div className="voice-stage">
-          <RobotLoader isLoading={true} isThinking={!isSpeaking} isSpeaking={isSpeaking} size={200} />
+          <RobotLoader
+            isLoading={true}
+            isThinking={!isSpeaking}
+            isSpeaking={isSpeaking}
+            size={200}
+          />
         </div>
 
         <p className="voice-caption">{statusLabel}</p>
 
         <div className="voice-btn-wrap">
-          <AnimatedSoundBars 
-            isAnimating={isListening} 
-            onClick={handleEndTap} 
-          />
+          <AnimatedSoundBars isAnimating={isListening} onClick={handleEndTap} />
 
           <div
             className={`
@@ -489,7 +510,7 @@ export function Assistant() {
      SELECTED VOICE
   ========================================================== */
 
-  const selectedVoiceRef = useRef<SpeechSynthesisVoice | null>(null);
+  const utterancesQueueRef = useRef<SpeechSynthesisUtterance[]>([]);
 
   /* ==========================================================
      VOICE CONVERSATION MODE
@@ -512,6 +533,32 @@ export function Assistant() {
   ========================================================== */
 
   const voiceInputRef = useRef(false);
+
+  /* ==========================================================
+     SESSION ID
+  ========================================================== */
+
+  const sessionIdRef = useRef<string>("");
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    let sessionId = window.localStorage.getItem("bharat_ai_session_id");
+
+    if (!sessionId) {
+      sessionId =
+        "session_" +
+        Date.now() +
+        "_" +
+        Math.random().toString(36).substring(2, 10);
+
+      window.localStorage.setItem("bharat_ai_session_id", sessionId);
+    }
+
+    sessionIdRef.current = sessionId;
+  }, []);
 
   /* ==========================================================
      SPEAK RESPONSE
@@ -538,7 +585,7 @@ export function Assistant() {
     }
 
     /* ========================================================
-       CHOOSE MOST CONSISTENT MALE VOICE
+       CHOOSE MALE VOICE
     ======================================================== */
 
     const chooseMaleVoice = (
@@ -587,24 +634,60 @@ export function Assistant() {
         return femaleHints.some((hint) => name.includes(hint));
       };
 
-      /* ======================================================
-         1. INDIAN ENGLISH MALE
-      ====================================================== */
+      const isAsianMale = (voice: SpeechSynthesisVoice) => {
+        const lang = voice.lang.toLowerCase();
+        const name = voice.name.toLowerCase();
 
-      const indianMale = voices.find(
-        (voice) =>
-          voice.lang.toLowerCase() === "en-in" &&
-          isMale(voice) &&
-          !isFemale(voice),
-      );
+        // Match Asian language codes or specific Asian male voice names
+        const isAsianLang =
+          lang.includes("en-in") ||
+          lang.includes("en-sg") ||
+          lang.includes("en-ph") ||
+          lang.includes("en-hk") ||
+          lang.includes("zh") ||
+          lang.includes("ko") ||
+          lang.includes("ja");
+        const asianNames = [
+          "ravi",
+          "prabhat",
+          "rishi",
+          "zhiwei",
+          "kazuha",
+          "keita",
+          "tian",
+          "yunjian",
+        ];
 
-      if (indianMale) {
-        return indianMale;
-      }
+        const hasAsianName = asianNames.some((hint) => name.includes(hint));
 
-      /* ======================================================
-         2. INDIAN ENGLISH NON-FEMALE
-      ====================================================== */
+        // MUST be explicitly male (either by male name, or has 'male' in the voice profile)
+        return (
+          (isAsianLang && isMale(voice)) || (hasAsianName && !isFemale(voice))
+        );
+      };
+
+      const youngMaleHints = [
+        "google uk english male",
+        "google us english",
+        "mark",
+        "aaron",
+        "alex",
+        "daniel",
+        "guy",
+      ];
+
+      const isYoungMale = (voice: SpeechSynthesisVoice) => {
+        const name = voice.name.toLowerCase();
+        return youngMaleHints.some((hint) => name.includes(hint));
+      };
+
+      // 1. Try to find an Asian/Indian male voice specifically
+      const asianMale = voices.find((voice) => isAsianMale(voice));
+      if (asianMale) return asianMale;
+
+      // 2. Try to find a young western male voice
+      const youngMale = voices.find((voice) => isYoungMale(voice));
+      if (youngMale) return youngMale;
 
       const indianEnglish = voices.find(
         (voice) =>
@@ -614,10 +697,6 @@ export function Assistant() {
       if (indianEnglish) {
         return indianEnglish;
       }
-
-      /* ======================================================
-         3. ENGLISH MALE
-      ====================================================== */
 
       const englishMale = voices.find(
         (voice) =>
@@ -630,10 +709,6 @@ export function Assistant() {
         return englishMale;
       }
 
-      /* ======================================================
-         4. ENGLISH NON-FEMALE
-      ====================================================== */
-
       const englishVoice = voices.find(
         (voice) =>
           voice.lang.toLowerCase().startsWith("en") && !isFemale(voice),
@@ -643,16 +718,8 @@ export function Assistant() {
         return englishVoice;
       }
 
-      /* ======================================================
-         5. LAST FALLBACK
-      ====================================================== */
-
       return voices[0] || null;
     };
-
-    /* ========================================================
-       SPEAK
-    ======================================================== */
 
     const speak = () => {
       const voices = window.speechSynthesis.getVoices();
@@ -661,90 +728,75 @@ export function Assistant() {
         return;
       }
 
-      /* ======================================================
-         SELECT VOICE ONLY ONCE
-      ====================================================== */
-
-      if (!selectedVoiceRef.current) {
-        selectedVoiceRef.current = chooseMaleVoice(voices);
-
-        if (selectedVoiceRef.current) {
-          console.log(
-            "Bharat AI selected voice:",
-            selectedVoiceRef.current.name,
-            selectedVoiceRef.current.lang,
-          );
-        }
-      }
-
-      const selectedVoice = selectedVoiceRef.current;
-
-      const utterance = new SpeechSynthesisUtterance(cleanText);
-
-      /* ======================================================
-         VOICE
-      ====================================================== */
+      const selectedVoice = chooseMaleVoice(voices);
 
       if (selectedVoice) {
-        utterance.voice = selectedVoice;
-
-        utterance.lang = selectedVoice.lang;
-      } else {
-        utterance.lang = "en-IN";
+        console.log(
+          "Bharat AI selected voice:",
+          selectedVoice.name,
+          selectedVoice.lang,
+        );
       }
 
-      /* ======================================================
-         CONSISTENT SETTINGS
-      ====================================================== */
+      const sentences = cleanText.match(/[^.!?]+[.!?]*/g) || [cleanText];
 
-      utterance.rate = 0.95;
-      utterance.pitch = 0.85;
-      utterance.volume = 1;
+      utterancesQueueRef.current = [];
 
-      /* ======================================================
-         START
-      ====================================================== */
+      sentences.forEach((sentence, index) => {
+        const textChunk = sentence.trim();
+        if (!textChunk) return;
 
-      utterance.onstart = () => {
-        setIsSpeaking(true);
-      };
+        const utterance = new SpeechSynthesisUtterance(textChunk);
+        utterancesQueueRef.current.push(utterance);
 
-      /* ======================================================
-         END
-      ====================================================== */
-
-      utterance.onend = () => {
-        setIsSpeaking(false);
-
-        if (continueConversation && conversationModeRef.current) {
-          setTimeout(() => {
-            startConversationListening();
-          }, 350);
+        if (selectedVoice) {
+          utterance.voice = selectedVoice;
+          utterance.lang = selectedVoice.lang;
+        } else {
+          utterance.lang = "en-IN";
         }
-      };
 
-      /* ======================================================
-         ERROR
-      ====================================================== */
+        utterance.rate = 1.15; // Faster, more energetic
+        utterance.pitch = 1.25; // Higher pitch for a younger boy
+        utterance.volume = 1;
 
-      utterance.onerror = (event) => {
-        console.error("Speech synthesis error:", event);
-
-        setIsSpeaking(false);
-
-        if (continueConversation && conversationModeRef.current) {
-          setTimeout(() => {
-            startConversationListening();
-          }, 350);
+        if (index === 0) {
+          utterance.onstart = () => {
+            setIsSpeaking(true);
+          };
         }
-      };
 
-      window.speechSynthesis.speak(utterance);
+        if (index === sentences.length - 1) {
+          utterance.onend = () => {
+            setIsSpeaking(false);
+
+            if (continueConversation && conversationModeRef.current) {
+              setTimeout(() => {
+                startConversationListening();
+              }, 350);
+            }
+          };
+
+          utterance.onerror = (event) => {
+            console.error("Speech synthesis error:", event);
+
+            setIsSpeaking(false);
+
+            if (continueConversation && conversationModeRef.current) {
+              setTimeout(() => {
+                startConversationListening();
+              }, 350);
+            }
+          };
+        } else {
+          utterance.onerror = (event) => {
+            console.error("Speech synthesis error on chunk:", event);
+          };
+        }
+
+        window.speechSynthesis.speak(utterance);
+      });
     };
-
-    /* ========================================================
-       LOAD VOICES
-    ======================================================== */
 
     const voices = window.speechSynthesis.getVoices();
 
@@ -772,7 +824,71 @@ export function Assistant() {
   };
 
   /* ==========================================================
-     SEND MESSAGE
+     STREAM RESPONSE PARSER
+  ========================================================== */
+
+  const parseStreamChunk = (chunk: string): string => {
+    if (!chunk) {
+      return "";
+    }
+
+    /*
+     * Supports:
+     *
+     * 1. Raw text streaming
+     * 2. SSE:
+     *    data: hello
+     * 3. JSON:
+     *    {"token":"hello"}
+     * 4. JSON:
+     *    {"text":"hello"}
+     * 5. JSON:
+     *    {"answer":"hello"}
+     */
+
+    let result = "";
+
+    const lines = chunk.split("\n");
+
+    for (const line of lines) {
+      const trimmed = line.trim();
+
+      if (!trimmed) {
+        continue;
+      }
+
+      if (trimmed === "data: [DONE]") {
+        continue;
+      }
+
+      let value = trimmed;
+
+      if (value.startsWith("data:")) {
+        value = value.substring(5).trim();
+      }
+
+      try {
+        const parsed = JSON.parse(value);
+
+        if (typeof parsed === "string") {
+          result += parsed;
+        } else if (typeof parsed.token === "string") {
+          result += parsed.token;
+        } else if (typeof parsed.text === "string") {
+          result += parsed.text;
+        } else if (typeof parsed.answer === "string") {
+          result += parsed.answer;
+        }
+      } catch {
+        result += value;
+      }
+    }
+
+    return result;
+  };
+
+  /* ==========================================================
+     SEND MESSAGE — STREAMING
   ========================================================== */
 
   const sendMessage = async (
@@ -790,17 +906,24 @@ export function Assistant() {
       conversationBusyRef.current = true;
     }
 
+    const userMessageId = Date.now().toString();
+
+    const aiMessageId = `${Date.now()}_ai`;
+
+    const timestamp = new Date().toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
+    /* ========================================================
+       USER MESSAGE
+    ======================================================== */
+
     const newUserMsg: Message = {
-      id: Date.now().toString(),
-
+      id: userMessageId,
       role: "user",
-
       content: text,
-
-      timestamp: new Date().toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
+      timestamp,
     };
 
     setMessages((prev) => [...prev, newUserMsg]);
@@ -809,62 +932,216 @@ export function Assistant() {
 
     setIsLoading(true);
 
+    /* ========================================================
+       STREAM STATE
+    ======================================================== */
+
+    let fullAnswer = "";
+
+    let aiMessageCreated = false;
+
     try {
-      const response = await fetch(
-        "https://personal-ai-assistant-production-e0db.up.railway.app/ask",
-        {
-          method: "POST",
+      console.log("Sending streaming request...");
 
-          headers: {
-            "Content-Type": "application/json",
-          },
+      /* ======================================================
+         BACKEND
+      ====================================================== */
 
-          body: JSON.stringify({
-            question: text,
-            voice: fromVoice,
-          }),
+      const backendUrl =
+        "https://personal-ai-assistant-production-e0db.up.railway.app/ask";
+
+      const response = await fetch(backendUrl, {
+        method: "POST",
+
+        headers: {
+          "Content-Type": "application/json",
+
+          Accept: "text/event-stream",
         },
-      );
+
+        body: JSON.stringify({
+          question: text,
+
+          voice: fromVoice,
+
+          session_id: sessionIdRef.current || "default",
+        }),
+      });
 
       if (!response.ok) {
         throw new Error(`Backend error: ${response.status}`);
       }
 
-      const data = await response.json();
+      /* ======================================================
+         STREAM CHECK
+      ====================================================== */
 
-      const answer = data.answer || "I couldn't generate a response right now.";
+      if (!response.body) {
+        throw new Error("Streaming is not supported by this response.");
+      }
 
-      const newAiMsg: Message = {
-        id: (Date.now() + 1).toString(),
+      const reader = response.body.getReader();
 
-        role: "ai",
+      const decoder = new TextDecoder("utf-8");
 
-        content: answer,
+      /* ======================================================
+         READ STREAM
+      ====================================================== */
 
-        timestamp: new Date().toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-      };
+      let buffer = "";
 
-      setMessages((prev) => [...prev, newAiMsg]);
+      while (true) {
+        const { done, value } = await reader.read();
+
+        if (done) {
+          break;
+        }
+
+        const chunk = decoder.decode(value, {
+          stream: true,
+        });
+
+        buffer += chunk;
+
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+
+        for (const line of lines) {
+          const token = parseStreamChunk(line + "\n");
+
+          if (!token) {
+            continue;
+          }
+
+          fullAnswer += token;
+
+          /* ====================================================
+           CREATE AI MESSAGE ON FIRST TOKEN
+        ==================================================== */
+
+          if (!aiMessageCreated && fullAnswer) {
+            aiMessageCreated = true;
+
+            setIsLoading(false);
+
+            const firstAiMessage: Message = {
+              id: aiMessageId,
+              role: "ai",
+              content: fullAnswer,
+              timestamp: new Date().toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              }),
+            };
+
+            setMessages((prev) => [...prev, firstAiMessage]);
+          } else if (aiMessageCreated) {
+            /* ==================================================
+             UPDATE EXISTING AI MESSAGE
+          ================================================== */
+
+            setMessages((prev) =>
+              prev.map((message) =>
+                message.id === aiMessageId
+                  ? {
+                      ...message,
+                      content: fullAnswer,
+                    }
+                  : message,
+              ),
+            );
+          }
+        }
+      }
+
+      /* ======================================================
+         FLUSH DECODER
+      ====================================================== */
+
+      const remaining = decoder.decode();
+      const finalBuffer = buffer + remaining;
+
+      if (finalBuffer) {
+        const token = parseStreamChunk(finalBuffer);
+
+        if (token) {
+          fullAnswer += token;
+
+          if (!aiMessageCreated) {
+            aiMessageCreated = true;
+
+            setIsLoading(false);
+
+            setMessages((prev) => [
+              ...prev,
+              {
+                id: aiMessageId,
+                role: "ai",
+                content: fullAnswer,
+                timestamp: new Date().toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                }),
+              },
+            ]);
+          } else {
+            setMessages((prev) =>
+              prev.map((message) =>
+                message.id === aiMessageId
+                  ? {
+                      ...message,
+                      content: fullAnswer,
+                    }
+                  : message,
+              ),
+            );
+          }
+        }
+      }
+
+      /* ======================================================
+         EMPTY RESPONSE
+      ====================================================== */
+
+      if (!fullAnswer.trim()) {
+        throw new Error("AI returned an empty response.");
+      }
+
+      /* ======================================================
+         STREAM COMPLETE
+      ====================================================== */
+
+      console.log("Streaming completed.");
+
+      console.log("Final answer:", fullAnswer);
+
+      /* ======================================================
+         VOICE AFTER STREAM
+      ====================================================== */
 
       if (fromVoice || conversation) {
         setTimeout(() => {
-          speakResponse(answer, conversation);
+          speakResponse(fullAnswer, conversation);
         }, 100);
       }
     } catch (error) {
-      console.error("Bharat AI error:", error);
+      console.error("Bharat AI streaming error:", error);
+
+      /* ======================================================
+         REMOVE PARTIAL AI MESSAGE
+      ====================================================== */
+
+      if (aiMessageCreated) {
+        setMessages((prev) =>
+          prev.filter((message) => message.id !== aiMessageId),
+        );
+      }
 
       const errorMsg: Message = {
-        id: (Date.now() + 1).toString(),
-
+        id: `${Date.now()}_error`,
         role: "ai",
-
         content:
           "I'm having trouble connecting to my AI server right now. Please make sure the Bharat AI backend is running.",
-
         timestamp: new Date().toLocaleTimeString([], {
           hour: "2-digit",
           minute: "2-digit",
@@ -939,9 +1216,9 @@ export function Assistant() {
 
       setInputValue(text);
 
-      /* ======================================================
-         NORMAL MICROPHONE
-      ====================================================== */
+      /* ==================================================
+           NORMAL MICROPHONE
+        ================================================== */
 
       if (finalTranscript.trim() && !conversationModeRef.current) {
         voiceInputRef.current = true;
@@ -951,9 +1228,9 @@ export function Assistant() {
         }, 250);
       }
 
-      /* ======================================================
-         VOICE CONVERSATION
-      ====================================================== */
+      /* ==================================================
+           VOICE CONVERSATION
+        ================================================== */
 
       if (finalTranscript.trim() && conversationModeRef.current) {
         setInputValue("");
@@ -1062,7 +1339,7 @@ export function Assistant() {
       recognitionRef.current.start();
 
       setIsListening(true);
-    } catch (error) {
+    } catch {
       console.log("Recognition already active.");
     }
   };
@@ -1138,33 +1415,6 @@ export function Assistant() {
   /* ==========================================================
      AVATARS
   ========================================================== */
-
-  const UserInitialAvatar = () => (
-    <div
-      className="
-        w-10
-        h-10
-        rounded-full
-        bg-gradient-to-br
-        from-[#3e3465]
-        to-[#8e85a6]
-        flex
-        items-center
-        justify-center
-        shadow-sm
-      "
-    >
-      <span
-        className="
-          text-white
-          font-semibold
-          text-sm
-        "
-      >
-        B
-      </span>
-    </div>
-  );
 
   const BotAvatar = () => (
     <div
@@ -1243,14 +1493,25 @@ export function Assistant() {
         overflow-hidden
         rounded-[10px]
         bg-transparent
-        zeyada-regular
+        font-ibm-plex
       "
     >
-      <div className="absolute inset-0 z-0 pointer-events-none rounded-[10px] overflow-hidden">
+      <div
+        className="
+          absolute
+          inset-0
+          z-0
+          pointer-events-none
+          rounded-[10px]
+          overflow-hidden
+        "
+      >
         <VoiceBackground />
       </div>
 
-      {/* CHAT AREA */}
+      {/* ====================================================
+          CHAT AREA
+      ==================================================== */}
 
       <div
         className="
@@ -1288,7 +1549,9 @@ export function Assistant() {
           </span>
         </div>
 
-        {/* MESSAGES */}
+        {/* ==================================================
+            MESSAGES
+        ================================================== */}
 
         <div className="space-y-6">
           {messages.map((msg) => (
@@ -1341,8 +1604,8 @@ export function Assistant() {
                 >
                   <p
                     className="
-                        zeyada-regular
-                        text-[24px]
+                        font-ibm-plex
+                        text-base
                         tracking-wide
                         leading-relaxed
                         whitespace-pre-wrap
@@ -1446,7 +1709,9 @@ export function Assistant() {
             </motion.div>
           ))}
 
-          {/* LOADING */}
+          {/* ==================================================
+              LOADING
+          ================================================== */}
 
           {isLoading && (
             <motion.div
@@ -1535,7 +1800,9 @@ export function Assistant() {
         </div>
       </div>
 
-      {/* INPUT */}
+      {/* ====================================================
+          INPUT
+      ==================================================== */}
 
       <div
         className="
@@ -1604,9 +1871,10 @@ export function Assistant() {
             className="
               flex-1
               bg-transparent
-              text-[22px]
+              text-base
               text-white
               placeholder:text-gray-400
+              placeholder:text-sm
               outline-none
               px-3
             "
@@ -1691,7 +1959,68 @@ export function Assistant() {
               {isConversationMode ? (
                 <PhoneOff className="w-5 h-5" />
               ) : (
-                <svg width="20" height="20" viewBox="0 0 21.2 21.2" fill="none" xmlns="http://www.w3.org/2000/svg" className="inline-block overflow-visible"><rect fill="currentColor" height="6px" fillOpacity="1" width="1.2px" rx="0.6" ry="0.6" x="0" y="7.6"></rect><rect fill="currentColor" height="10px" fillOpacity="1" width="1.2px" rx="0.6" ry="0.6" x="3.9999999999999996" y="5.6"></rect><rect fill="currentColor" height="16px" fillOpacity="1" width="1.2px" rx="0.6" ry="0.6" x="8" y="2.5999999999999996"></rect><rect fill="currentColor" height="10px" fillOpacity="1" width="1.2px" rx="0.6" ry="0.6" x="12" y="5.6"></rect><rect fill="currentColor" height="16px" fillOpacity="1" width="1.2px" rx="0.6" ry="0.6" x="16" y="2.5999999999999996"></rect><rect fill="currentColor" height="6px" fillOpacity="1" width="1.2px" rx="0.6" ry="0.6" x="20" y="7.6"></rect></svg>
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 21.2 21.2"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="inline-block overflow-visible"
+                >
+                  <rect
+                    fill="currentColor"
+                    height="6px"
+                    width="1.2px"
+                    rx="0.6"
+                    x="0"
+                    y="7.6"
+                  />
+
+                  <rect
+                    fill="currentColor"
+                    height="10px"
+                    width="1.2px"
+                    rx="0.6"
+                    x="4"
+                    y="5.6"
+                  />
+
+                  <rect
+                    fill="currentColor"
+                    height="16px"
+                    width="1.2px"
+                    rx="0.6"
+                    x="8"
+                    y="2.6"
+                  />
+
+                  <rect
+                    fill="currentColor"
+                    height="10px"
+                    width="1.2px"
+                    rx="0.6"
+                    x="12"
+                    y="5.6"
+                  />
+
+                  <rect
+                    fill="currentColor"
+                    height="16px"
+                    width="1.2px"
+                    rx="0.6"
+                    x="16"
+                    y="2.6"
+                  />
+
+                  <rect
+                    fill="currentColor"
+                    height="6px"
+                    width="1.2px"
+                    rx="0.6"
+                    x="20"
+                    y="7.6"
+                  />
+                </svg>
               )}
             </button>
           )}
@@ -1702,8 +2031,8 @@ export function Assistant() {
         <p
           className="
             text-center
-            text-[18px]
-            text-gray-300
+            text-xs
+            text-gray-400
             mt-2
           "
         >
@@ -1713,7 +2042,9 @@ export function Assistant() {
         </p>
       </div>
 
-      {/* VOICE CONVERSATION WINDOW */}
+      {/* ====================================================
+          VOICE CONVERSATION WINDOW
+      ==================================================== */}
 
       {isConversationMode && (
         <VoiceThinkingState
