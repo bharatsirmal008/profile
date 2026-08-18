@@ -265,6 +265,7 @@ function DraggableWindow({
   const stateRef = useRef({
     isDragMode: false,
     pos: null as { x: number; y: number } | null,
+    initialDragPos: null as { x: number; y: number } | null,
     startPointer: { x: 0, y: 0 },
     currentPointer: { x: 0, y: 0 },
     timer: null as NodeJS.Timeout | null,
@@ -323,14 +324,8 @@ function DraggableWindow({
       if (state.isDragMode) {
         setIsDragMode(false);
 
-        let startX = state.pos?.x ?? 0;
-        let startY = state.pos?.y ?? 0;
-
-        if (!state.pos && windowRef.current) {
-          const rect = windowRef.current.getBoundingClientRect();
-          startX = rect.left;
-          startY = rect.top;
-        }
+        let startX = state.initialDragPos?.x ?? 0;
+        let startY = state.initialDragPos?.y ?? 0;
 
         const newPos = {
           x: startX + e.clientX - state.startPointer.x,
@@ -389,6 +384,14 @@ function DraggableWindow({
 
     stateRef.current.timer = setTimeout(() => {
       stateRef.current.startPointer = { ...stateRef.current.currentPointer };
+      
+      if (!pos && windowRef.current) {
+        const rect = windowRef.current.getBoundingClientRect();
+        stateRef.current.initialDragPos = { x: rect.left, y: rect.top };
+      } else {
+        stateRef.current.initialDragPos = pos;
+      }
+
       setIsDragMode(true);
       stateRef.current.timer = null;
     }, 100);
@@ -396,7 +399,7 @@ function DraggableWindow({
 
   if (!isMounted) return null;
 
-  const isCentered = !pos && !isMaximized;
+  const isCentered = !pos && !isMaximized && !isDragMode;
   let dynamicStyle: React.CSSProperties = {
     touchAction: "none", // Prevent scrolling on the wrapper to keep touch drag smooth
   };
@@ -407,10 +410,11 @@ function DraggableWindow({
     dynamicStyle.left = pos.x + offset.x;
     dynamicStyle.top = pos.y + offset.y;
     dynamicStyle.margin = 0;
-  } else if (isDragMode && windowRef.current) {
-    const rect = windowRef.current.getBoundingClientRect();
-    dynamicStyle.left = rect.left + offset.x;
-    dynamicStyle.top = rect.top + offset.y;
+  } else if (isDragMode) {
+    const startX = stateRef.current.initialDragPos?.x ?? 0;
+    const startY = stateRef.current.initialDragPos?.y ?? 0;
+    dynamicStyle.left = startX + offset.x;
+    dynamicStyle.top = startY + offset.y;
     dynamicStyle.margin = 0;
   }
 
@@ -423,7 +427,7 @@ function DraggableWindow({
           ? { opacity: 1, scale: 1, x: 0, y: 0 }
           : { opacity: 1, scale: isDragMode ? 1.02 : 1, y: 0 }
       }
-      className={`absolute z-50 overflow-hidden flex flex-col transition-all duration-300 ${
+      className={`absolute z-50 overflow-hidden flex flex-col ${isDragMode ? "" : "transition-all duration-300"} ${
         activeWindow === "resume" || activeWindow === "about"
           ? "bg-white rounded-[10px] border border-gray-200"
           : activeWindow === "assistant"
@@ -622,6 +626,30 @@ export function Hero() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [activeWindow, setActiveWindow] = useState<string | null>(null);
   const [isMaximized, setIsMaximized] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+    const storedWindow = sessionStorage.getItem("activeWindow");
+    const storedMaximized = sessionStorage.getItem("isMaximized");
+    if (storedWindow) {
+      setActiveWindow(storedWindow);
+    }
+    if (storedMaximized === "true") {
+      setIsMaximized(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isMounted) return;
+    if (activeWindow) {
+      sessionStorage.setItem("activeWindow", activeWindow);
+      sessionStorage.setItem("isMaximized", isMaximized.toString());
+    } else {
+      sessionStorage.removeItem("activeWindow");
+      sessionStorage.removeItem("isMaximized");
+    }
+  }, [activeWindow, isMaximized, isMounted]);
 
   const toggleWindow = (id: string, maximize = false) => {
     if (activeWindow === id) {
