@@ -500,7 +500,9 @@ export function Assistant() {
 
   const [messages, setMessages] = useState<Message[]>(defaultMessages);
   const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
+  const [activeConversationId, setActiveConversationId] = useState<
+    string | null
+  >(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [dataLoaded, setDataLoaded] = useState(false);
 
@@ -515,37 +517,51 @@ export function Assistant() {
         console.error("Failed to parse conversations from local storage", e);
       }
     }
-    
+
     const newId = Date.now().toString();
     setActiveConversationId(newId);
     setMessages(defaultMessages);
-    
+
     setDataLoaded(true);
   }, []);
 
   useEffect(() => {
     if (!dataLoaded || !activeConversationId) return;
-    
-    setConversations(prev => {
-      const exists = prev.find(c => c.id === activeConversationId);
+
+    setConversations((prev) => {
+      const exists = prev.find((c) => c.id === activeConversationId);
       if (messages.length <= 1) {
-         return prev;
+        return prev;
       }
-      
-      const firstUserMsg = messages.find(m => m.role === "user")?.content || "New Chat";
-      const title = firstUserMsg.length > 25 ? firstUserMsg.slice(0, 25) + "..." : firstUserMsg;
-      
+
+      const firstUserMsg =
+        messages.find((m) => m.role === "user")?.content || "New Chat";
+      const title =
+        firstUserMsg.length > 25
+          ? firstUserMsg.slice(0, 25) + "..."
+          : firstUserMsg;
+
       if (exists) {
-        return prev.map(c => c.id === activeConversationId ? { ...c, messages, updatedAt: Date.now() } : c);
+        return prev.map((c) =>
+          c.id === activeConversationId
+            ? { ...c, messages, updatedAt: Date.now() }
+            : c,
+        );
       } else {
-        return [{ id: activeConversationId, title, messages, updatedAt: Date.now() }, ...prev];
+        return [
+          { id: activeConversationId, title, messages, updatedAt: Date.now() },
+          ...prev,
+        ];
       }
     });
   }, [messages, activeConversationId, dataLoaded]);
 
   useEffect(() => {
     if (dataLoaded) {
-      localStorage.setItem("assistantConversations", JSON.stringify(conversations));
+      localStorage.setItem(
+        "assistantConversations",
+        JSON.stringify(conversations),
+      );
     }
   }, [conversations, dataLoaded]);
 
@@ -556,7 +572,7 @@ export function Assistant() {
   };
 
   const loadConversation = (id: string) => {
-    const conv = conversations.find(c => c.id === id);
+    const conv = conversations.find((c) => c.id === id);
     if (conv) {
       setActiveConversationId(id);
       setMessages(conv.messages);
@@ -569,8 +585,8 @@ export function Assistant() {
 
   const deleteConversation = (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
-    setConversations(prev => {
-      const filtered = prev.filter(c => c.id !== id);
+    setConversations((prev) => {
+      const filtered = prev.filter((c) => c.id !== id);
       if (activeConversationId === id) {
         if (filtered.length > 0) {
           setActiveConversationId(filtered[0].id);
@@ -591,8 +607,8 @@ export function Assistant() {
       setRenamingChatId(null);
       return;
     }
-    setConversations(prev => 
-      prev.map(c => c.id === id ? { ...c, title: renameInput.trim() } : c)
+    setConversations((prev) =>
+      prev.map((c) => (c.id === id ? { ...c, title: renameInput.trim() } : c)),
     );
     setRenamingChatId(null);
   };
@@ -1060,7 +1076,8 @@ export function Assistant() {
          BACKEND
       ====================================================== */
 
-      const backendUrl = "http://127.0.0.1:8001/ask";
+      const backendUrl =
+        "https://personal-ai-assistant-production-e0db.up.railway.app/ask";
 
       const response = await fetch(backendUrl, {
         method: "POST",
@@ -1626,7 +1643,7 @@ export function Assistant() {
       ==================================================== */}
 
       <div className="absolute top-0 left-0 right-0 h-16 z-[45] flex items-center px-4 bg-gradient-to-b from-black/60 to-transparent pointer-events-none">
-        <button 
+        <button
           onClick={() => setIsSidebarOpen(true)}
           className="p-2 rounded-md hover:bg-white/10 text-white/80 hover:text-white transition-colors pointer-events-auto shadow-sm backdrop-blur-sm"
         >
@@ -1659,71 +1676,84 @@ export function Assistant() {
                   <Plus className="w-4 h-4" />
                   New Chat
                 </button>
-                <button onClick={() => setIsSidebarOpen(false)} className="ml-2 p-2 shrink-0 text-white/60 hover:text-white rounded-md hover:bg-white/10 transition-colors">
-                   <X className="w-4 h-4" />
+                <button
+                  onClick={() => setIsSidebarOpen(false)}
+                  className="ml-2 p-2 shrink-0 text-white/60 hover:text-white rounded-md hover:bg-white/10 transition-colors"
+                >
+                  <X className="w-4 h-4" />
                 </button>
               </div>
               <div className="flex-1 overflow-y-auto p-3 space-y-1 dark-scrollbar">
                 {conversations.length === 0 && (
-                   <p className="text-white/40 text-xs text-center mt-4">No chat history yet</p>
+                  <p className="text-white/40 text-xs text-center mt-4">
+                    No chat history yet
+                  </p>
                 )}
-                {conversations.sort((a, b) => b.updatedAt - a.updatedAt).map(conv => (
-                  <div
-                    key={conv.id}
-                    className={`relative w-full rounded-lg flex items-center group transition-colors ${
-                      activeConversationId === conv.id ? "bg-white/15" : "hover:bg-white/5"
-                    }`}
-                  >
-                    <button
-                      onClick={() => loadConversation(conv.id)}
-                      className={`flex-1 text-left pl-3 pr-2 py-3 flex items-center gap-3 overflow-hidden ${
-                         activeConversationId === conv.id ? "text-white" : "text-white/70 hover:text-white"
+                {conversations
+                  .sort((a, b) => b.updatedAt - a.updatedAt)
+                  .map((conv) => (
+                    <div
+                      key={conv.id}
+                      className={`relative w-full rounded-lg flex items-center group transition-colors ${
+                        activeConversationId === conv.id
+                          ? "bg-white/15"
+                          : "hover:bg-white/5"
                       }`}
                     >
-                      <MessageSquare className="w-4 h-4 shrink-0 opacity-70 group-hover:opacity-100" />
-                      {renamingChatId === conv.id ? (
-                        <form
-                          onSubmit={(e) => submitRename(e, conv.id)}
-                          className="flex-1 flex items-center"
-                        >
-                          <input
-                            autoFocus
-                            value={renameInput}
-                            onChange={(e) => setRenameInput(e.target.value)}
-                            onBlur={(e) => submitRename(e, conv.id)}
-                            onClick={(e) => e.stopPropagation()}
-                            className="w-full bg-black/50 text-white text-sm outline-none px-2 py-0.5 rounded border border-white/20"
-                          />
-                        </form>
-                      ) : (
-                        <span className="truncate text-sm font-medium pr-12">{conv.title}</span>
+                      <button
+                        onClick={() => loadConversation(conv.id)}
+                        className={`flex-1 text-left pl-3 pr-2 py-3 flex items-center gap-3 overflow-hidden ${
+                          activeConversationId === conv.id
+                            ? "text-white"
+                            : "text-white/70 hover:text-white"
+                        }`}
+                      >
+                        <MessageSquare className="w-4 h-4 shrink-0 opacity-70 group-hover:opacity-100" />
+                        {renamingChatId === conv.id ? (
+                          <form
+                            onSubmit={(e) => submitRename(e, conv.id)}
+                            className="flex-1 flex items-center"
+                          >
+                            <input
+                              autoFocus
+                              value={renameInput}
+                              onChange={(e) => setRenameInput(e.target.value)}
+                              onBlur={(e) => submitRename(e, conv.id)}
+                              onClick={(e) => e.stopPropagation()}
+                              className="w-full bg-black/50 text-white text-sm outline-none px-2 py-0.5 rounded border border-white/20"
+                            />
+                          </form>
+                        ) : (
+                          <span className="truncate text-sm font-medium pr-12">
+                            {conv.title}
+                          </span>
+                        )}
+                      </button>
+
+                      {renamingChatId !== conv.id && (
+                        <div className="absolute right-1 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setRenamingChatId(conv.id);
+                              setRenameInput(conv.title);
+                            }}
+                            className="p-1.5 text-white/50 hover:text-white hover:bg-white/20 rounded-md transition-colors"
+                            title="Rename"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={(e) => deleteConversation(e, conv.id)}
+                            className="p-1.5 text-white/50 hover:text-red-400 hover:bg-red-400/20 rounded-md transition-colors"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       )}
-                    </button>
-                    
-                    {renamingChatId !== conv.id && (
-                      <div className="absolute right-1 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setRenamingChatId(conv.id);
-                            setRenameInput(conv.title);
-                          }}
-                          className="p-1.5 text-white/50 hover:text-white hover:bg-white/20 rounded-md transition-colors"
-                          title="Rename"
-                        >
-                          <Edit2 className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={(e) => deleteConversation(e, conv.id)}
-                          className="p-1.5 text-white/50 hover:text-red-400 hover:bg-red-400/20 rounded-md transition-colors"
-                          title="Delete"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                ))}
+                    </div>
+                  ))}
               </div>
             </motion.div>
           </>
@@ -1776,37 +1806,36 @@ export function Assistant() {
 
         <div className="space-y-6">
           {messages.map((msg) => (
-              <motion.div
-                initial={{
-                  opacity: 0,
-                  y: 10,
-                }}
-                animate={{
-                  opacity: 1,
-                  y: 0,
-                }}
-                key={msg.id}
-                className="flex justify-center w-full group px-4"
-              >
-
-                <div
-                  className={`
+            <motion.div
+              initial={{
+                opacity: 0,
+                y: 10,
+              }}
+              animate={{
+                opacity: 1,
+                y: 0,
+              }}
+              key={msg.id}
+              className="flex justify-center w-full group px-4"
+            >
+              <div
+                className={`
                       flex
                       flex-col
                       ${msg.role === "user" ? "items-end" : "items-start"}
                       w-full
                       max-w-3xl
                     `}
-                >
-                  <div
-                    className={`
+              >
+                <div
+                  className={`
                         ${
                           msg.role === "user"
                             ? "bg-black/40 backdrop-blur-md text-[#14ff82] rounded-2xl rounded-tr-sm border border-white/10 shadow-sm px-5 py-4 max-w-[85%]"
                             : "text-white bg-transparent border-transparent py-2 w-full"
                         }
                       `}
-                  >
+                >
                   <div
                     className="
                         font-ibm-plex
@@ -1818,19 +1847,34 @@ export function Assistant() {
                     <ReactMarkdown
                       components={{
                         h1: ({ node, ...props }) => (
-                          <h1 className="text-xl font-bold mb-3 text-white" {...props} />
+                          <h1
+                            className="text-xl font-bold mb-3 text-white"
+                            {...props}
+                          />
                         ),
                         h2: ({ node, ...props }) => (
-                          <h2 className="text-lg font-bold mb-2 mt-4 text-white" {...props} />
+                          <h2
+                            className="text-lg font-bold mb-2 mt-4 text-white"
+                            {...props}
+                          />
                         ),
                         h3: ({ node, ...props }) => (
-                          <h3 className="text-base font-bold mb-2 mt-3 text-white" {...props} />
+                          <h3
+                            className="text-base font-bold mb-2 mt-3 text-white"
+                            {...props}
+                          />
                         ),
                         p: ({ node, ...props }) => (
-                          <p className="mb-3 last:mb-0 whitespace-pre-wrap" {...props} />
+                          <p
+                            className="mb-3 last:mb-0 whitespace-pre-wrap"
+                            {...props}
+                          />
                         ),
                         strong: ({ node, ...props }) => (
-                          <strong className="font-bold text-white/90" {...props} />
+                          <strong
+                            className="font-bold text-white/90"
+                            {...props}
+                          />
                         ),
                         ul: ({ node, ...props }) => (
                           <ul className="list-disc pl-5 mb-3" {...props} />
