@@ -19,13 +19,24 @@ import {
   MessageSquare,
   Edit2,
   Trash2,
-  Check,
 } from "lucide-react";
 
 import { motion, AnimatePresence } from "framer-motion";
 
 import RobotLoader from "@/components/RobotLoader";
+
 import { VoiceBackground } from "@/components/VoiceBackground";
+
+/* ============================================================
+   API CONFIGURATION
+============================================================ */
+
+const API_BASE_URL = (
+  process.env.NEXT_PUBLIC_API_URL ||
+  "https://personal-ai-assistan-production.up.railway.app"
+).replace(/\/$/, "");
+
+const ASK_ENDPOINT = `${API_BASE_URL}/ask`;
 
 /* ============================================================
    TYPES
@@ -63,8 +74,6 @@ type SpeechRecognitionInstance = {
   onerror: ((event: any) => void) | null;
   onresult: ((event: any) => void) | null;
 };
-
-type SpeechRecognitionConstructor = new () => SpeechRecognitionInstance;
 
 /* ============================================================
    ANIMATED SOUND BARS
@@ -1076,10 +1085,7 @@ export function Assistant() {
          BACKEND
       ====================================================== */
 
-      const backendUrl =
-        "https://personal-ai-assistan-production.up.railway.app/api/ask";
-
-      const response = await fetch(backendUrl, {
+      const response = await fetch(ASK_ENDPOINT, {
         method: "POST",
 
         headers: {
@@ -1098,7 +1104,19 @@ export function Assistant() {
       });
 
       if (!response.ok) {
-        throw new Error(`Backend error: ${response.status}`);
+        let errorDetails = "";
+
+        try {
+          errorDetails = await response.text();
+        } catch {
+          // Ignore secondary read errors.
+        }
+
+        throw new Error(
+          `Backend error: ${response.status} ${response.statusText}${
+            errorDetails ? ` - ${errorDetails}` : ""
+          }`,
+        );
       }
 
       /* ======================================================
@@ -1689,7 +1707,7 @@ export function Assistant() {
                     No chat history yet
                   </p>
                 )}
-                {conversations
+                {[...conversations]
                   .sort((a, b) => b.updatedAt - a.updatedAt)
                   .map((conv) => (
                     <div
