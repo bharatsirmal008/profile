@@ -1,0 +1,61 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="120" y1="120" x2="904" y2="904" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#21D4FD"/>
+      <stop offset="0.48" stop-color="#5961F9"/>
+      <stop offset="1" stop-color="#B24BF3"/>
+    </linearGradient>
+
+    <linearGradient id="folder" x1="300" y1="310" x2="720" y2="720" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#EAF1FF"/>
+    </linearGradient>
+
+    <radialGradient id="glow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse"
+      gradientTransform="translate(512 480) rotate(90) scale(430)">
+      <stop stop-color="#FFFFFF" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="24" stdDeviation="28" flood-color="#000000" flood-opacity="0.28"/>
+    </filter>
+
+    <filter id="softGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="12" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- App tile -->
+  <rect x="72" y="72" width="880" height="880" rx="230" fill="url(#bg)" filter="url(#shadow)"/>
+  <rect x="72" y="72" width="880" height="880" rx="230" fill="url(#glow)"/>
+  <rect x="88" y="88" width="848" height="848" rx="214" stroke="white" stroke-opacity="0.18" stroke-width="8"/>
+
+  <!-- Folder body -->
+  <path
+    d="M267 338C267 307 292 282 323 282H449C467 282 484 290 495 304L535 353H701C732 353 757 378 757 409V681C757 712 732 737 701 737H323C292 737 267 712 267 681V338Z"
+    fill="url(#folder)"
+    filter="url(#softGlow)"
+  />
+
+  <!-- Folder inner panel -->
+  <rect x="323" y="424" width="378" height="244" rx="44" fill="#17224A" fill-opacity="0.16"/>
+
+  <!-- Code brackets -->
+  <path d="M438 474L373 546L438 618"
+        stroke="#5C63FF" stroke-width="32" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M586 474L651 546L586 618"
+        stroke="#5C63FF" stroke-width="32" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Center slash -->
+  <path d="M545 456L479 636"
+        stroke="#5C63FF" stroke-width="28" stroke-linecap="round"/>
+
+  <!-- Small project status nodes -->
+  <circle cx="340" cy="352" r="16" fill="#FFFFFF" fill-opacity="0.75"/>
+  <circle cx="690" cy="352" r="16" fill="#FFFFFF" fill-opacity="0.55"/>
+</svg>

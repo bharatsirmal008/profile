@@ -2,7 +2,10 @@
 
 import React, { useRef, useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import Image from "next/image";
+import { HalloweenAnimation } from "./HalloweenAnimation";
+import { DesktopWindow } from "./DesktopWindow";
+import { LinkedInApp } from "./LinkedInApp";
+import { GitHubApp } from "./GitHubApp";
 import Link from "next/link";
 import {
   MousePointer2,
@@ -65,12 +68,35 @@ const FOLDERS = [
   },
 ];
 
+const SOCIAL_APPS = [
+  {
+    id: "linkedin",
+    label: "LinkedIn",
+    initialX: 136,
+    initialY: 48,
+    delay: 0.7,
+    image: "/linkedin.png",
+    href: "https://www.linkedin.com/in/bharat-sirmal/",
+  },
+  {
+    id: "github",
+    label: "GitHub",
+    initialX: 136,
+    initialY: 176,
+    delay: 0.8,
+    image: "/github.png",
+    href: "https://github.com/bharatsirmal008",
+  },
+];
+
 function DraggableFolder({
   folder,
   onClick,
+  running = false,
 }: {
   folder: any;
   onClick: () => void;
+  running?: boolean;
 }) {
   const [pos, setPos] = useState({ x: folder.initialX, y: folder.initialY });
   const [offset, setOffset] = useState({ x: 0, y: 0 });
@@ -220,6 +246,15 @@ function DraggableFolder({
         top: pos.y + offset.y,
         touchAction: "none",
       }}
+      role="button"
+      tabIndex={0}
+      aria-label={`Open ${folder.label}`}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onClick();
+        }
+      }}
       onPointerDown={onPointerDown}
     >
       <div
@@ -240,6 +275,7 @@ function DraggableFolder({
       >
         <LetterReveal text={folder.label} />
       </span>
+      {running && <span aria-label={`${folder.label} is running`} className="h-1 w-1 rounded-full bg-sky-300 shadow-[0_0_8px_#7dd3fc]" />}
     </motion.div>
   );
 }
@@ -249,11 +285,13 @@ function DraggableWindow({
   isMaximized,
   setIsMaximized,
   setActiveWindow,
+  focusSocial,
 }: {
   activeWindow: string;
   isMaximized: boolean;
   setIsMaximized: (val: boolean) => void;
   setActiveWindow: (val: string | null) => void;
+  focusSocial?: (id: string) => void;
 }) {
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
@@ -514,22 +552,20 @@ function DraggableWindow({
               <>
                 <div className="flex-1"></div>
                 <div className="flex items-center gap-4 text-gray-600 mr-2 pointer-events-auto">
-                  <a
-                    href="https://www.linkedin.com/in/bharat-sirmal/"
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <button
+                    onClick={() => focusSocial?.("linkedin")}
                     className="hover:text-gray-900 transition-colors"
+                    aria-label="Open LinkedIn"
                   >
                     <Linkedin className="w-4 h-4" />
-                  </a>
-                  <a
-                    href="https://github.com/bharatsirmal008"
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  </button>
+                  <button
+                    onClick={() => focusSocial?.("github")}
                     className="hover:text-gray-900 transition-colors"
+                    aria-label="Open GitHub"
                   >
                     <Github className="w-4 h-4" />
-                  </a>
+                  </button>
                   <a
                     href="https://www.instagram.com/bharat_sirmal008/"
                     target="_blank"
@@ -606,7 +642,7 @@ function DraggableWindow({
             />
           )}
           {activeWindow === "contact" && <Contact />}
-          {activeWindow === "resume" && <Resume />}
+          {activeWindow === "resume" && <Resume focusSocial={focusSocial} />}
           {activeWindow === "assistant" && <Assistant />}
         </div>
       </div>
@@ -614,19 +650,26 @@ function DraggableWindow({
   );
 }
 
-/* ============================================================
-   ASCII BACKGROUND
-   Cream canvas covered in a monospace character field whose
-   density is driven by layered noise plus a soft central mask —
-   sparse "." "-" ":" dots fading out to edges, dense "#" "%" "@"
-   clusters in indigo/violet toward the center.
-============================================================ */
-
 export function Hero() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [activeWindow, setActiveWindow] = useState<string | null>(null);
   const [isMaximized, setIsMaximized] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+  const [socialWindows, setSocialWindows] = useState<Record<string, { minimized: boolean; zIndex: number }>>({});
+  const [focusedApp, setFocusedApp] = useState<string | null>(null);
+  const [legacyZ, setLegacyZ] = useState(50);
+  const topZ = useRef(50);
+  const focusSocial = (id: string) => {
+    if (focusedApp === id && !socialWindows[id]?.minimized) return;
+    const zIndex = ++topZ.current;
+    setFocusedApp(id);
+    setSocialWindows((previous) => ({ ...previous, [id]: { minimized: false, zIndex } }));
+  };
+  const focusLegacy = () => {
+    if (focusedApp === "legacy") return;
+    setFocusedApp("legacy");
+    setLegacyZ(++topZ.current);
+  };
 
   useEffect(() => {
     setIsMounted(true);
@@ -652,6 +695,7 @@ export function Hero() {
   }, [activeWindow, isMaximized, isMounted]);
 
   const toggleWindow = (id: string, maximize = false) => {
+    focusLegacy();
     if (activeWindow === id) {
       setActiveWindow(null);
     } else {
@@ -663,17 +707,16 @@ export function Hero() {
   return (
     <section
       ref={containerRef}
-      className="relative h-[100dvh] w-full overflow-hidden bg-[#0a0b0d] font-sans selection:bg-black selection:text-white border-[10px] border-white"
+      className="relative h-[100dvh] w-full overflow-hidden bg-black font-sans selection:bg-red-900 selection:text-white"
     >
-      {/* Background Image */}
+      {/* Halloween wallpaper; desktop folders and windows remain interactive. */}
       <div className="absolute inset-0 z-0 overflow-hidden">
-        {/* Background */}
-        <Image
-          src="/hero.png"
-          alt="Hero Background"
-          fill
-          priority
-          className="object-cover object-center"
+        <HalloweenAnimation
+          greeting="I AM"
+          title="BHARAT SIRMAL"
+          speed={0.5}
+          controls={false}
+          className="h-full pl-24 pr-3 sm:px-24"
         />
       </div>
 
@@ -686,24 +729,63 @@ export function Hero() {
             onClick={() => toggleWindow(folder.id, false)}
           />
         ))}
+        {SOCIAL_APPS.map((app) => (
+          <DraggableFolder
+            key={app.id}
+            folder={app}
+            running={Boolean(socialWindows[app.id])}
+            onClick={() => focusSocial(app.id)}
+          />
+        ))}
       </div>
 
       {/* Window Modal */}
       {activeWindow && (
+        <div className="pointer-events-none absolute inset-0 [&>div]:pointer-events-auto" style={{ zIndex: legacyZ }} onPointerDownCapture={focusLegacy}>
         <DraggableWindow
           activeWindow={activeWindow}
           isMaximized={isMaximized}
           setIsMaximized={setIsMaximized}
           setActiveWindow={setActiveWindow}
+          focusSocial={focusSocial}
         />
+        </div>
       )}
+
+      <AnimatePresence>
+        {SOCIAL_APPS.filter((app) => socialWindows[app.id]).map((app) => (
+          <DesktopWindow
+            key={app.id}
+            title={app.label}
+            icon={app.image}
+            minimized={socialWindows[app.id].minimized}
+            zIndex={socialWindows[app.id].zIndex}
+            focused={focusedApp === app.id}
+            onFocus={() => focusSocial(app.id)}
+            onMinimize={() => {
+              setSocialWindows((previous) => ({ ...previous, [app.id]: { ...previous[app.id], minimized: true } }));
+              setFocusedApp(null);
+            }}
+            onClose={() => {
+              setSocialWindows((previous) => {
+                const next = { ...previous };
+                delete next[app.id];
+                return next;
+              });
+              setFocusedApp(null);
+            }}
+          >
+            {app.id === "linkedin" ? <LinkedInApp /> : <GitHubApp />}
+          </DesktopWindow>
+        ))}
+      </AnimatePresence>
 
       {/* Bottom Dock (macOS Format) */}
       <motion.div
         initial={{ opacity: 0, y: 50 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
-        className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 rounded-[15px] px-4 py-2 flex items-center gap-4 bg-transparent border border-white/30 backdrop-blur-3xl shadow-[0_8px_32px_0_rgba(0,0,0,0.36)]"
+        className="absolute bottom-8 left-1/2 -translate-x-1/2 z-[10000] rounded-[15px] px-2 sm:px-4 py-2 flex items-center gap-2 sm:gap-4 bg-black/30 border border-white/30 backdrop-blur-3xl shadow-[0_8px_32px_0_rgba(0,0,0,0.36)]"
       >
         {/* Resume Icon */}
         <div className="relative group flex items-center justify-center">
@@ -723,7 +805,7 @@ export function Hero() {
           </div>
         </div>
 
-        {/* Siri Icon */}
+        {/* Jojo AI Assistant Icon */}
         <div className="relative group flex items-center justify-center">
           <div className="absolute -top-12 px-3 py-1 bg-black/60 backdrop-blur-md text-white text-xs font-semibold rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow-lg border border-white/10 whitespace-nowrap">
             Assistant
@@ -733,7 +815,7 @@ export function Hero() {
             onClick={() => toggleWindow("assistant", false)}
           >
             <img
-              src="/siri.png"
+              src="/jojo-ai-assistant-app.svg"
               alt="Assistant"
               className="w-full h-full object-cover pointer-events-none"
               draggable={false}
@@ -763,6 +845,13 @@ export function Hero() {
             />
           </div>
         </div>
+        {SOCIAL_APPS.filter((app) => socialWindows[app.id]).map((app) => (
+          <button key={app.id} type="button" aria-label={`Restore ${app.label} window`} onClick={() => focusSocial(app.id)} className="group relative h-12 w-12 shrink-0 rounded-[22.5%] border border-white/50 shadow-sm transition-transform hover:scale-110 focus-visible:outline-2 focus-visible:outline-white md:h-14 md:w-14">
+            <img src={app.image} alt="" className="h-full w-full rounded-[22.5%] object-cover" draggable={false} />
+            <span className="pointer-events-none absolute -top-10 left-1/2 -translate-x-1/2 rounded-md bg-black/80 px-2 py-1 text-xs text-white opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100">{app.label}</span>
+            <span aria-label={`${app.label} is running`} className="absolute -bottom-1.5 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-sky-300 shadow-[0_0_8px_#7dd3fc]" />
+          </button>
+        ))}
       </motion.div>
     </section>
   );

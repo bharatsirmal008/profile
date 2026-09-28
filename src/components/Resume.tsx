@@ -5,7 +5,7 @@ import { Download } from "lucide-react";
 import { LetterReveal } from "./LetterReveal";
 import { useReactToPrint } from "react-to-print";
 
-export function Resume() {
+export function Resume({ focusSocial }: { focusSocial?: (id: string) => void }) {
   const contentRef = useRef<HTMLDivElement>(null);
   const handleDownloadPDF = useReactToPrint({ 
     contentRef,
@@ -36,13 +36,17 @@ export function Resume() {
               sirmalbharat99@gmail.com
             </a>
             <span>|</span>
-            <a href="https://www.linkedin.com/in/bharat-sirmal/" target="_blank" rel="noopener noreferrer" className="hover:underline">
-              Linkedin
-            </a>
+            {focusSocial ? (
+              <button type="button" onClick={() => focusSocial("linkedin")} className="hover:underline">Linkedin</button>
+            ) : (
+              <a href="https://www.linkedin.com/in/bharat-sirmal/" target="_blank" rel="noopener noreferrer" className="hover:underline">Linkedin</a>
+            )}
             <span>|</span>
-            <a href="https://github.com/bharatsirmal008" target="_blank" rel="noopener noreferrer" className="hover:underline">
-              Github
-            </a>
+            {focusSocial ? (
+              <button type="button" onClick={() => focusSocial("github")} className="hover:underline">Github</button>
+            ) : (
+              <a href="https://github.com/bharatsirmal008" target="_blank" rel="noopener noreferrer" className="hover:underline">Github</a>
+            )}
             <span>|</span>
             <a href="#" className="hover:underline">
               Portfolio-Bharat Sirmal
