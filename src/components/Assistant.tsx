@@ -1076,7 +1076,8 @@ export function Assistant() {
          BACKEND
       ====================================================== */
 
-      const backendUrl = "personal-ai-assistan-production.up.railway.app/ask";
+      const backendUrl =
+        "https://personal-ai-assistan-production.up.railway.app/api/ask";
 
       const response = await fetch(backendUrl, {
         method: "POST",
