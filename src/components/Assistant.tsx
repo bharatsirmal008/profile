@@ -21,11 +21,13 @@ import {
   Trash2,
 } from "lucide-react";
 
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
+import { AssistantSpace } from "./AssistantSpace";
+import styles from "./Assistant.module.css";
 
-import RobotLoader from "@/components/RobotLoader";
+import { VoiceInterface } from "./VoiceInterface";
 
-import { VoiceBackground } from "@/components/VoiceBackground";
+
 
 /* ============================================================
    API CONFIGURATION
@@ -75,421 +77,11 @@ type SpeechRecognitionInstance = {
   onresult: ((event: any) => void) | null;
 };
 
-/* ============================================================
-   ANIMATED SOUND BARS
-============================================================ */
-
-const AnimatedSoundBars = ({
-  isAnimating,
-  onClick,
-}: {
-  isAnimating: boolean;
-  onClick: () => void;
-}) => {
-  const heights = [48, 69, 90, 58, 34, 70, 90, 70, 58, 36];
-
-  return (
-    <button
-      onClick={onClick}
-      className="flex items-center justify-center gap-2 h-[120px] bg-transparent border-none cursor-pointer outline-none hover:scale-105 transition-transform my-4"
-      title="End voice conversation"
-    >
-      {heights.map((h, i) => {
-        const duration = (0.9 + (i % 3) * 0.2).toFixed(2);
-        const delay = (i * 0.07).toFixed(2);
-
-        return (
-          <div
-            key={i}
-            className="relative w-[12px] rounded-full bg-transparent border-[2px] border-[#14ff82] origin-center"
-            style={{
-              height: `${h}px`,
-              boxShadow:
-                "0 0 6px rgba(20,255,130,0.8), inset 0 0 4px rgba(20,255,130,0.25)",
-              animation: isAnimating
-                ? `sound-bounce ${duration}s ease-in-out ${delay}s infinite`
-                : "none",
-            }}
-          >
-            <div className="absolute inset-0 rounded-full bg-[#14ff82]/10" />
-          </div>
-        );
-      })}
-
-      <style jsx>{`
-        @keyframes sound-bounce {
-          0%,
-          100% {
-            transform: scaleY(1);
-          }
-
-          50% {
-            transform: scaleY(0.4);
-          }
-        }
-      `}</style>
-    </button>
-  );
-};
-
-/* ============================================================
-   VOICE THINKING STATE
-============================================================ */
-
-function VoiceThinkingState({
-  isConversationMode,
-  isListening,
-  isSpeaking,
-  onClose,
-}: {
-  isConversationMode: boolean;
-  isListening: boolean;
-  isSpeaking: boolean;
-  onClose: () => void;
-}) {
-  const [toastMsg, setToastMsg] = useState<string | null>(null);
-
-  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    setToastMsg("Starting Bharat AI…");
-
-    toastTimerRef.current = setTimeout(() => {
-      setToastMsg(null);
-    }, 2200);
-
-    return () => {
-      if (toastTimerRef.current) {
-        clearTimeout(toastTimerRef.current);
-      }
-    };
-  }, []);
-
-  const handleEndTap = () => {
-    if (toastTimerRef.current) {
-      clearTimeout(toastTimerRef.current);
-    }
-
-    setToastMsg("Ending conversation…");
-
-    toastTimerRef.current = setTimeout(() => {
-      setToastMsg(null);
-      onClose();
-    }, 260);
-  };
-
-  const statusLabel = isSpeaking
-    ? "Bharat AI is speaking…"
-    : isListening
-      ? "Listening…"
-      : isConversationMode
-        ? "Voice conversation"
-        : "Ready";
-
-  return (
-    <div
-      className="
-        fixed
-        inset-0
-        z-[100]
-        flex
-        items-center
-        justify-center
-        bg-black
-      "
-    >
-      <VoiceBackground />
-
-      <style>{`
-        .voice-card {
-          position: relative;
-          z-index: 10;
-          width: 100%;
-          max-width: 360px;
-          background: transparent;
-          border: none;
-          padding: 24px 16px 32px;
-          box-sizing: border-box;
-          box-shadow: none;
-        }
-
-        .voice-header {
-          display: flex;
-          align-items: flex-start;
-          justify-content: space-between;
-        }
-
-        .voice-eyebrow {
-          color: #8a8a9a;
-          font-size: 11px;
-          font-weight: 600;
-          letter-spacing: 0.12em;
-          margin: 0 0 6px;
-          text-transform: uppercase;
-        }
-
-        .voice-title {
-          color: #f2f2f5;
-          font-size: 24px;
-          font-weight: 700;
-          margin: 0;
-        }
-
-        .voice-live {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          color: #a99bff;
-          font-size: 13px;
-          font-weight: 500;
-          padding-top: 4px;
-        }
-
-        .voice-live-dot {
-          width: 7px;
-          height: 7px;
-          border-radius: 50%;
-          background: #8b7bff;
-          box-shadow:
-            0 0 8px 2px
-            rgba(139,123,255,0.7);
-          animation:
-            voice-dot-pulse
-            1.6s ease-in-out infinite;
-        }
-
-        @keyframes voice-dot-pulse {
-          0%, 100% {
-            opacity: 1;
-            transform: scale(1);
-          }
-
-          50% {
-            opacity: 0.5;
-            transform: scale(0.8);
-          }
-        }
-
-        .voice-close {
-          color: #6b6b7a;
-          transition: color 0.15s ease;
-          padding: 8px;
-        }
-
-        .voice-close:hover {
-          color: #f2f2f5;
-        }
-
-        .voice-stage {
-          position: relative;
-          width: 100%;
-          min-height: 280px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          perspective: 900px;
-          margin: 8px 0 6px;
-        }
-
-        .voice-sphere {
-          position: relative;
-          width: 200px;
-          height: 200px;
-          transform-style: preserve-3d;
-          animation:
-            voice-spin
-            9s linear infinite;
-        }
-
-        @keyframes voice-spin {
-          from {
-            transform:
-              rotateY(0deg)
-              rotateX(8deg);
-          }
-
-          to {
-            transform:
-              rotateY(360deg)
-              rotateX(8deg);
-          }
-        }
-
-        .voice-caption {
-          text-align: center;
-          color: #d6d6e0;
-          font-size: 14px;
-          font-weight: 500;
-          margin: 4px 0 20px;
-        }
-
-        .voice-btn-wrap {
-          position: relative;
-          display: flex;
-          justify-content: center;
-        }
-
-        .voice-mic-btn {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          margin: 4px auto 4px;
-          width: 64px;
-          height: 64px;
-          border-radius: 50%;
-          border: none;
-          cursor: pointer;
-          background:
-            radial-gradient(
-              circle at 35% 30%,
-              #9b8bff,
-              #6c56f5 60%,
-              #4a37c9 100%
-            );
-          box-shadow:
-            0 0 0 6px
-            rgba(139,123,255,0.12),
-            0 8px 24px
-            rgba(108,86,245,0.45);
-          transition:
-            transform 0.15s ease,
-            box-shadow 0.15s ease;
-        }
-
-        .voice-mic-btn:hover {
-          transform: scale(1.05);
-
-          box-shadow:
-            0 0 0 8px
-            rgba(139,123,255,0.18),
-            0 10px 28px
-            rgba(108,86,245,0.55);
-        }
-
-        .voice-mic-btn:active {
-          transform: scale(0.96);
-        }
-
-        .voice-mic-btn.voice-pulse {
-          animation:
-            voice-pulse-animation
-            1.5s ease-in-out infinite;
-        }
-
-        @keyframes voice-pulse-animation {
-          0%, 100% {
-            transform: scale(1);
-
-            box-shadow:
-              0 0 0 6px
-              rgba(139,123,255,0.12),
-              0 8px 24px
-              rgba(108,86,245,0.45);
-          }
-
-          50% {
-            transform: scale(1.08);
-
-            box-shadow:
-              0 0 0 18px
-              rgba(139,123,255,0.05),
-              0 12px 40px
-              rgba(108,86,245,0.7);
-          }
-        }
-
-        .voice-toast {
-          position: absolute;
-          left: 50%;
-          bottom: -6px;
-          transform: translate(-50%, 0);
-          background: #1c1c28;
-          border: 1px solid #34344a;
-          color: #f2f2f5;
-          font-size: 13px;
-          font-weight: 500;
-          padding: 8px 16px;
-          border-radius: 999px;
-          white-space: nowrap;
-          box-shadow:
-            0 8px 20px
-            rgba(0,0,0,0.4);
-          opacity: 0;
-          pointer-events: none;
-          transition:
-            opacity 0.25s ease,
-            transform 0.25s ease;
-        }
-
-        .voice-toast.show {
-          opacity: 1;
-          transform:
-            translate(-50%, -14px);
-        }
-
-        .dark-scrollbar::-webkit-scrollbar {
-          width: 6px;
-        }
-
-        .dark-scrollbar::-webkit-scrollbar-track {
-          background: rgba(255, 255, 255, 0.05);
-          border-radius: 4px;
-        }
-
-        .dark-scrollbar::-webkit-scrollbar-thumb {
-          background: rgba(255, 255, 255, 0.2);
-          border-radius: 4px;
-        }
-
-        .dark-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: rgba(255, 255, 255, 0.3);
-        }
-      `}</style>
-
-      <div className="voice-card" onClick={(e) => e.stopPropagation()}>
-        <div className="flex justify-end">
-          <button
-            onClick={onClose}
-            className="voice-close"
-            aria-label="Close voice mode"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-
-        <div className="voice-stage">
-          <RobotLoader
-            isLoading={true}
-            isThinking={!isSpeaking}
-            isSpeaking={isSpeaking}
-            size={200}
-          />
-        </div>
-
-        <p className="voice-caption">{statusLabel}</p>
-
-        <div className="voice-btn-wrap">
-          <AnimatedSoundBars isAnimating={isListening} onClick={handleEndTap} />
-
-          <div
-            className={`
-              voice-toast
-              ${toastMsg ? "show" : ""}
-            `}
-          >
-            {toastMsg}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ============================================================
-   ASSISTANT
-============================================================ */
-
-export function Assistant() {
+export function Assistant({ onVoiceModeChange }: { onVoiceModeChange?: (active: boolean) => void } = {}) {
+  const reducedMotion = useReducedMotion();
+  const speechPulse = useRef(0);
+  const chatRef = useRef<HTMLDivElement | null>(null);
+  const followMessagesRef = useRef(true);
   /* ==========================================================
      MESSAGES
   ========================================================== */
@@ -500,10 +92,7 @@ export function Assistant() {
       role: "ai",
       content:
         "Hey! 👋\nI'm Jojo — Bharat's personal AI assistant.\nHow can I help you today?",
-      timestamp: new Date().toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
+      timestamp: "",
     },
   ];
 
@@ -529,7 +118,7 @@ export function Assistant() {
 
     const newId = Date.now().toString();
     setActiveConversationId(newId);
-    setMessages(defaultMessages);
+    setMessages(defaultMessages.map(message => ({ ...message, timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) })));
 
     setDataLoaded(true);
   }, []);
@@ -575,12 +164,14 @@ export function Assistant() {
   }, [conversations, dataLoaded]);
 
   const startNewChat = () => {
+    followMessagesRef.current = true;
     setActiveConversationId(Date.now().toString());
-    setMessages(defaultMessages);
+    setMessages(defaultMessages.map(message => ({ ...message, timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) })));
     if (window.innerWidth < 768) setIsSidebarOpen(false);
   };
 
   const loadConversation = (id: string) => {
+    followMessagesRef.current = true;
     const conv = conversations.find((c) => c.id === id);
     if (conv) {
       setActiveConversationId(id);
@@ -655,6 +246,10 @@ export function Assistant() {
   ========================================================== */
 
   const [isConversationMode, setIsConversationMode] = useState(false);
+  useEffect(() => {
+    onVoiceModeChange?.(isConversationMode);
+    return () => onVoiceModeChange?.(false);
+  }, [isConversationMode, onVoiceModeChange]);
 
   const conversationModeRef = useRef(false);
 
@@ -897,9 +492,11 @@ export function Assistant() {
         utterance.rate = 1.15; // Faster, more energetic
         utterance.pitch = 1.25; // Higher pitch for a younger boy
         utterance.volume = 1;
+        utterance.onboundary = () => { speechPulse.current = performance.now(); };
 
         if (index === 0) {
           utterance.onstart = () => {
+            speechPulse.current = performance.now();
             setIsSpeaking(true);
           };
         }
@@ -1039,6 +636,7 @@ export function Assistant() {
     if (!text || isLoading || conversationBusyRef.current) {
       return;
     }
+    followMessagesRef.current = true;
 
     if (conversation) {
       conversationBusyRef.current = true;
@@ -1333,6 +931,8 @@ export function Assistant() {
     }
 
     const recognition = new SpeechRecognition();
+    let retryAfterSilence = false;
+    let retryTimer: ReturnType<typeof setTimeout> | null = null;
 
     recognition.continuous = false;
 
@@ -1400,6 +1000,16 @@ export function Assistant() {
 
     recognition.onend = () => {
       setIsListening(false);
+      // Wait for recognition to end before restarting after a silence timeout.
+      if (retryAfterSilence && conversationModeRef.current) {
+        retryAfterSilence = false;
+        retryTimer = setTimeout(() => {
+          retryTimer = null;
+          if (conversationModeRef.current && !conversationBusyRef.current && !window.speechSynthesis?.speaking) {
+            startConversationListening();
+          }
+        }, 500);
+      }
     };
 
     /* ========================================================
@@ -1407,24 +1017,36 @@ export function Assistant() {
     ======================================================== */
 
     recognition.onerror = (event: any) => {
-      console.error("Speech recognition error:", event.error);
-
       setIsListening(false);
 
-      if (event.error === "not-allowed") {
-        alert("Please allow microphone access for Bharat AI.");
+      // Silence and an intentional stop are normal browser recognition events.
+      if (event.error === "no-speech") {
+        retryAfterSilence = conversationModeRef.current;
+        return;
+      }
+      if (event.error === "aborted") {
+        retryAfterSilence = false;
+        return;
       }
 
-      if (event.error === "no-speech" && conversationModeRef.current) {
-        setTimeout(() => {
-          startConversationListening();
-        }, 500);
+      console.warn("Speech recognition unavailable:", event.error);
+
+      if (event.error === "not-allowed" || event.error === "service-not-allowed") {
+        conversationModeRef.current = false;
+        setIsConversationMode(false);
+        alert("Please allow microphone access for Bharat AI.");
       }
     };
 
     recognitionRef.current = recognition;
 
     return () => {
+      if (retryTimer) clearTimeout(retryTimer);
+      recognition.onstart = null;
+      recognition.onend = null;
+      recognition.onerror = null;
+      recognition.onresult = null;
+      recognitionRef.current = null;
       try {
         recognition.stop();
       } catch {}
@@ -1554,10 +1176,12 @@ export function Assistant() {
   ========================================================== */
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({
-      behavior: "smooth",
+    if (!followMessagesRef.current) return;
+    chatRef.current?.scrollTo({
+      top: chatRef.current.scrollHeight,
+      behavior: reducedMotion ? "instant" : "smooth",
     });
-  }, [messages, isLoading]);
+  }, [messages, isLoading, reducedMotion]);
 
   /* ==========================================================
      AVATARS
@@ -1619,53 +1243,41 @@ export function Assistant() {
      DATE
   ========================================================== */
 
-  const todayDate = new Date().toLocaleDateString("en-US", {
+  const todayDate = dataLoaded ? new Date().toLocaleDateString("en-US", {
     weekday: "long",
     month: "long",
     day: "numeric",
-  });
+  }) : "";
 
   /* ==========================================================
      UI
   ========================================================== */
 
   return (
-    <div
-      className="
-        relative
-        flex
-        h-full
-        w-full
-        flex-col
-        overflow-hidden
-        rounded-[10px]
-        bg-transparent
-        font-ibm-plex
-      "
-    >
+    <div className={styles.shell}>
       <div
         className="
           absolute
           inset-0
           z-0
           pointer-events-none
-          rounded-[10px]
+          rounded-[var(--portfolio-radius)]
           overflow-hidden
         "
       >
-        <VoiceBackground />
+        <AssistantSpace />
       </div>
 
       {/* ====================================================
           HEADER & SIDEBAR
       ==================================================== */}
 
-      <div className="absolute top-0 left-0 right-0 h-16 z-[45] flex items-center px-4 bg-gradient-to-b from-black/60 to-transparent pointer-events-none">
+      <div className={styles.toolbar}>
         <button
-          onClick={() => setIsSidebarOpen(true)}
-          className="p-2 rounded-md hover:bg-white/10 text-white/80 hover:text-white transition-colors pointer-events-auto shadow-sm backdrop-blur-sm"
+          aria-label="Open chat history" aria-expanded={isSidebarOpen} onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+          className={styles.menuButton}
         >
-          <Menu className="w-5 h-5" />
+          {isSidebarOpen ? <X size={16} /> : <Menu size={16} />}
         </button>
       </div>
 
@@ -1677,14 +1289,14 @@ export function Assistant() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsSidebarOpen(false)}
-              className="absolute inset-0 z-[60] bg-black/60 backdrop-blur-[2px] rounded-[10px]"
+              className="absolute inset-0 z-[60] bg-black/60 backdrop-blur-[2px] rounded-[var(--portfolio-radius)]"
             />
             <motion.div
-              initial={{ x: "-100%" }}
+              initial={reducedMotion ? false : { x: "-100%" }}
               animate={{ x: 0 }}
               exit={{ x: "-100%" }}
-              transition={{ type: "spring", bounce: 0, duration: 0.3 }}
-              className="absolute top-0 left-0 bottom-0 w-[280px] max-w-[85%] z-[70] bg-[#0c0d10] border-r border-white/10 flex flex-col shadow-2xl rounded-l-[10px]"
+              transition={reducedMotion ? { duration: 0 } : { type: "spring", bounce: 0, duration: 0.3 }}
+              className={`${styles.sidebar} absolute top-0 left-0 bottom-0 w-[280px] max-w-[85%] z-[70] border-r flex flex-col shadow-2xl rounded-l-[var(--portfolio-radius)]`}
             >
               <div className="p-4 flex items-center justify-between border-b border-white/10">
                 <button
@@ -1782,50 +1394,19 @@ export function Assistant() {
           CHAT AREA
       ==================================================== */}
 
-      <div
-        className="
-          flex-1
-          overflow-y-auto
-          px-6
-          pt-14
-          pb-28
-          scroll-smooth
-          bg-transparent
-          relative
-          z-10
-          dark-scrollbar
-        "
-      >
+      <div ref={chatRef} onScroll={event => { const el = event.currentTarget; followMessagesRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 90; }} className={styles.chat}>
         {/* DATE */}
 
-        <div
-          className="
-            flex
-            items-center
-            justify-center
-            my-6
-          "
-        >
-          <span
-            className="
-              px-4
-              text-[20px]
-              text-gray-300
-              font-medium
-            "
-          >
-            {todayDate}
-          </span>
-        </div>
+        <div className={styles.date}>{todayDate}</div>
 
         {/* ==================================================
             MESSAGES
         ================================================== */}
 
-        <div className="space-y-6">
-          {messages.map((msg) => (
+        <div className={`${styles.messages} space-y-6`}>
+          {messages.map((msg, messageIndex) => (
             <motion.div
-              initial={{
+              initial={reducedMotion ? false : {
                 opacity: 0,
                 y: 10,
               }}
@@ -1834,7 +1415,7 @@ export function Assistant() {
                 y: 0,
               }}
               key={msg.id}
-              className="flex justify-center w-full group px-4"
+              className="flex justify-center w-full group"
             >
               <div
                 className={`
@@ -1849,7 +1430,7 @@ export function Assistant() {
                   className={`
                         ${
                           msg.role === "user"
-                            ? "bg-black/40 backdrop-blur-md text-[#14ff82] rounded-2xl rounded-tr-sm border border-white/10 shadow-sm px-5 py-4 max-w-[85%]"
+                            ? "bg-black/40 backdrop-blur-md text-[#14ff82] rounded-[var(--portfolio-radius)] rounded-tr-sm border border-white/10 shadow-sm px-5 py-4 max-w-[85%]"
                             : "text-white bg-transparent border-transparent py-2 w-full"
                         }
                       `}
@@ -1862,7 +1443,13 @@ export function Assistant() {
                         leading-relaxed
                       "
                   >
-                    <ReactMarkdown
+                    {messageIndex === 0 && msg.id === "1" ? (
+                      <div className={styles.welcome}>
+                        <motion.h2 initial={reducedMotion ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>Hey! <span className={styles.wave}>👋</span></motion.h2>
+                        <p className={styles.intro}>I’m <strong>Jojo</strong> — Bharat’s personal AI assistant.</p>
+                        <p className={styles.question}>How can I help you today?</p>
+                      </div>
+                    ) : <ReactMarkdown
                       components={{
                         h1: ({ node, ...props }) => (
                           <h1
@@ -1906,7 +1493,7 @@ export function Assistant() {
                       }}
                     >
                       {msg.content}
-                    </ReactMarkdown>
+                    </ReactMarkdown>}
                   </div>
                 </div>
 
@@ -1919,13 +1506,7 @@ export function Assistant() {
                       px-1
                     "
                 >
-                  <span
-                    className="
-                        text-[18px]
-                        text-gray-300
-                        font-medium
-                      "
-                  >
+                  <span className={styles.timestamp}>
                     {msg.timestamp}
                   </span>
 
@@ -2009,84 +1590,7 @@ export function Assistant() {
           ================================================== */}
 
           {isLoading && (
-            <motion.div
-              initial={{
-                opacity: 0,
-                y: 10,
-              }}
-              animate={{
-                opacity: 1,
-                y: 0,
-              }}
-              className="
-                flex
-                justify-start
-                w-full
-              "
-            >
-              <div
-                className="
-                  mr-3
-                  mt-1
-                "
-              >
-                <BotAvatar />
-              </div>
-
-              <div
-                className="
-                  bg-transparent
-                  px-5
-                  py-4
-                  rounded-2xl
-                  rounded-tl-sm
-                  border-transparent
-                  flex
-                  items-center
-                  gap-2
-                  h-[56px]
-                "
-              >
-                <div
-                  className="
-                    flex
-                    gap-1.5
-                  "
-                >
-                  <div
-                    className="
-                      w-2
-                      h-2
-                      bg-[#8e85a6]
-                      rounded-full
-                      animate-bounce
-                      [animation-delay:-0.3s]
-                    "
-                  />
-
-                  <div
-                    className="
-                      w-2
-                      h-2
-                      bg-[#8e85a6]
-                      rounded-full
-                      animate-bounce
-                      [animation-delay:-0.15s]
-                    "
-                  />
-
-                  <div
-                    className="
-                      w-2
-                      h-2
-                      bg-[#8e85a6]
-                      rounded-full
-                      animate-bounce
-                    "
-                  />
-                </div>
-              </div>
-            </motion.div>
+            <motion.div initial={reducedMotion ? false : { opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className={styles.thinking} role="status" aria-label="Jojo is thinking"><i /><i /><i /></motion.div>
           )}
 
           <div ref={messagesEndRef} />
@@ -2098,53 +1602,25 @@ export function Assistant() {
       ==================================================== */}
 
       <div
-        className="
-          absolute
-          bottom-0
-          left-0
-          w-full
-          p-4
-          bg-gradient-to-t
-          from-black/80
-          via-black/50
-          to-transparent
-          pt-10
-          rounded-b-[10px]
-          z-10
-        "
+        className={styles.composerWrap}
       >
         <form
           onSubmit={handleSendMessage}
-          className="
-            max-w-3xl
-            mx-auto
-            bg-black/40
-            backdrop-blur-md
-            border
-            border-white/20
-            rounded-[15px]
-            px-2
-            py-2
-            flex
-            items-center
-            transition-all
-            focus-within:ring-2
-            focus-within:ring-[#8e85a6]/30
-          "
+          className={styles.composer}
         >
           {/* NORMAL MICROPHONE */}
 
           <button
             type="button"
             onClick={toggleListening}
-            className={`
+            className={`${styles.mic}
               p-2
               transition-all
               ml-1
               ${
                 isListening
                   ? "text-red-500 bg-red-50 rounded-full animate-pulse"
-                  : "text-[#8e85a6] hover:text-[#4a3b69]"
+                  : "text-[#a5ffe1] hover:text-white"
               }
             `}
             title={isListening ? "Stop listening" : "Speak to Bharat AI"}
@@ -2154,8 +1630,9 @@ export function Assistant() {
 
           {/* INPUT */}
 
-          <input
-            type="text"
+          <textarea
+            rows={1} aria-label="Message Jojo"
+            onKeyDown={event => { if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); handleSendMessage(); } }}
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             placeholder={
@@ -2196,12 +1673,13 @@ export function Assistant() {
             <button
               type="submit"
               disabled={isLoading}
+              aria-label="Send message"
               className="
                 w-10
                 h-10
-                bg-[#a699c2]
-                hover:bg-[#8e85a6]
-                disabled:bg-[#d5d0df]
+                bg-[#10b981]
+                hover:bg-[#34f5a0]
+                disabled:bg-[#165b45]
                 text-white
                 rounded-full
                 transition-all
@@ -2321,14 +1799,7 @@ export function Assistant() {
 
         {/* MODE INFORMATION */}
 
-        <p
-          className="
-            text-center
-            text-xs
-            text-gray-400
-            mt-2
-          "
-        >
+        <p className={styles.disclaimer}>
           {isConversationMode
             ? "Voice conversation active • Tap red button to end"
             : "Bharat AI can make mistakes. Verify important information."}
@@ -2339,14 +1810,17 @@ export function Assistant() {
           VOICE CONVERSATION WINDOW
       ==================================================== */}
 
+      <AnimatePresence>
       {isConversationMode && (
-        <VoiceThinkingState
-          isConversationMode={isConversationMode}
+        <VoiceInterface
+          isThinking={isLoading}
+          speechPulse={speechPulse}
           isListening={isListening}
           isSpeaking={isSpeaking}
           onClose={stopVoiceConversation}
         />
       )}
+      </AnimatePresence>
     </div>
   );
 }

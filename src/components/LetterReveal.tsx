@@ -26,21 +26,9 @@ export function LetterReveal({
 
   if (shouldReduceMotion) {
     return (
-      <motion.span
-        className={className}
-        initial={{ opacity: 0 }}
-        whileInView={{ opacity: 1 }}
-        viewport={{
-          once: true,
-          margin: "-50px",
-        }}
-        transition={{
-          duration,
-          delay,
-        }}
-      >
+      <span className={className}>
         {text}
-      </motion.span>
+      </span>
     );
   }
 
@@ -75,19 +63,15 @@ export function LetterReveal({
       opacity: 0,
       y: 20,
       scale: 0.96,
-      filter: "blur(4px)",
     },
 
     visible: {
       opacity: 1,
       y: 0,
       scale: 1,
-      filter: "blur(0px)",
 
       transition: {
-        type: "spring" as const,
-        damping: 15,
-        stiffness: 100,
+        duration,
       },
     },
   };

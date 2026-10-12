@@ -3,10 +3,13 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { projects } from "@/lib/projects";
-import { Globe, Home, ExternalLink, Menu, X, Minus, Maximize2 } from "lucide-react";
+import { usePortfolioProjectState } from "@/lib/local-projects";
+import { Globe, Home, ExternalLink, X, Minus, Maximize2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { LetterReveal } from "./LetterReveal";
+import { HeaderSocialLinks } from "./HeaderSocialLinks";
+import { MobileAppHeader } from "./MobileAppHeader";
+import styles from "./Projects.module.css";
 
 interface ProjectsProps {
   onClose?: () => void;
@@ -15,39 +18,24 @@ interface ProjectsProps {
 }
 
 export function Projects({ onClose, onMinimize, onMaximize }: ProjectsProps = {}) {
+  const { projects, loading, error } = usePortfolioProjectState();
   const [activeProjectIndex, setActiveProjectIndex] = useState(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
-  const activeProject = projects[activeProjectIndex];
+  const activeProject = projects[activeProjectIndex] || projects[0];
 
   return (
-    <div className="w-full h-full flex flex-col md:flex-row bg-white font-sans text-gray-900 overflow-hidden relative">
+    <div className={`${styles.shell} w-full h-full flex flex-col md:flex-row font-sans text-gray-900 overflow-hidden relative`}>
       
-      {/* Mobile Header (visible only on small screens) */}
-      <div className="md:hidden flex items-center justify-between p-4 border-b border-gray-200 bg-white z-20">
-        <div className="flex items-center gap-3">
-          <button onClick={onClose} className="p-1.5 -ml-1.5 text-gray-600 hover:text-gray-900 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors">
-            <Home className="w-[18px] h-[18px]" />
-          </button>
-          <span className="font-semibold text-gray-900">
-            <LetterReveal text="Projects" />
-          </span>
-        </div>
-        <button 
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="p-2 -mr-2 text-gray-600 hover:text-gray-900"
-        >
-          {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-        </button>
-      </div>
+      <MobileAppHeader title="Projects" onBack={onClose} menuOpen={isMobileMenuOpen} onToggleMenu={() => setIsMobileMenuOpen(open => !open)} />
 
       {/* Sidebar Navigation */}
       <div className={`
-        absolute md:relative z-10 w-full md:w-64 h-[calc(100%-60px)] md:h-full bg-white border-r border-gray-100 flex flex-col shrink-0 transition-transform duration-300 ease-in-out
+        ${styles.sidebar} absolute top-12 bottom-0 md:top-auto md:bottom-auto md:relative z-10 w-full md:w-64 md:h-full border-r flex flex-col shrink-0 transition-transform duration-300 ease-in-out
         ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
       `}>
         {/* Window Controls */}
-        <div className="hidden md:flex h-12 items-center px-4 gap-2 shrink-0 group cursor-grab">
+        <div data-desktop-controls className="hidden md:flex h-12 items-center px-4 gap-2 shrink-0 group cursor-grab">
             <div 
               className="w-3.5 h-3.5 rounded-full bg-[#ff5f56] hover:bg-[#ff5f56]/80 cursor-pointer shadow-sm border border-[#e0443e] flex items-center justify-center transition-colors" 
               onClick={(e) => { e.stopPropagation(); onClose?.(); }}
@@ -74,7 +62,7 @@ export function Projects({ onClose, onMinimize, onMaximize }: ProjectsProps = {}
           </h2>
           <nav className="flex flex-col gap-1">
             {projects.map((project, index) => {
-              const isActive = index === activeProjectIndex;
+              const isActive = project.slug === activeProject?.slug;
               return (
                 <button
                   key={project.slug}
@@ -83,9 +71,9 @@ export function Projects({ onClose, onMinimize, onMaximize }: ProjectsProps = {}
                     setIsMobileMenuOpen(false);
                   }}
                   className={`
-                    w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-[15px] font-medium transition-all text-left
+                    w-full flex items-center gap-3 px-4 py-2.5 rounded-[var(--portfolio-radius)] text-[15px] font-medium transition-all text-left
                     ${isActive 
-                      ? 'bg-[#f5f5f5] text-gray-900' 
+                      ? styles.activeProject
                       : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
                     }
                   `}
@@ -100,26 +88,28 @@ export function Projects({ onClose, onMinimize, onMaximize }: ProjectsProps = {}
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col h-full bg-white overflow-hidden relative">
+      <div className={`${styles.main} flex-1 flex flex-col h-full overflow-hidden relative`}>
         
         {/* Top Breadcrumb Bar */}
-        <div className="h-12 shrink-0 border-b border-gray-100 flex items-center justify-between px-8 md:px-12 bg-white cursor-grab">
-          <div className="flex items-center gap-2 text-[15px] font-medium text-gray-400">
+        <div className={`${styles.header} min-h-12 shrink-0 border-b flex flex-wrap items-center justify-between gap-3 px-6 py-3 md:px-8 cursor-grab`}>
+          <div className="flex min-w-0 flex-1 items-center gap-2 text-[15px] font-medium text-gray-400">
             <span>User</span>
             <span className="text-gray-300">/</span>
             <span>Projects</span>
             <span className="text-gray-300">/</span>
-            <span className="text-gray-900">{activeProject.title}</span>
+            <span className="truncate text-gray-900">{activeProject?.title || "Overview"}</span>
           </div>
-          <button className="text-gray-400 hover:text-gray-900 transition-colors">
+          <HeaderSocialLinks />
+          <button onClick={onClose} aria-label="Return to desktop" className="text-gray-400 hover:text-gray-900 transition-colors">
             <Home className="w-[18px] h-[18px]" />
           </button>
         </div>
 
         {/* Scrollable Project Details */}
-        <div className="flex-1 overflow-y-auto px-8 md:px-12 py-10 md:py-16 pb-32">
+        <div className={`${styles.details} flex-1 overflow-y-auto px-5 md:px-8 py-8 md:py-10 pb-16`}>
+          {(loading || error) && <p role={error ? "alert" : "status"} className="py-6 text-sm text-slate-500">{error || "Loading projects…"}</p>}
           <AnimatePresence mode="wait">
-            <motion.div
+            {activeProject ? <motion.div
               key={activeProject.slug}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -129,13 +119,14 @@ export function Projects({ onClose, onMinimize, onMaximize }: ProjectsProps = {}
             >
               
               {/* Header: Title & Visit Link */}
+              <div className={styles.panel}>
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                 <h1 className="text-4xl md:text-[42px] font-semibold text-gray-900 tracking-tight">
                   <LetterReveal text={activeProject.title} />
                 </h1>
                 
                 {activeProject.liveLink && (
-                  <Link 
+                  <Link
                     href={activeProject.liveLink}
                     target="_blank"
                     rel="noopener noreferrer"
@@ -147,13 +138,15 @@ export function Projects({ onClose, onMinimize, onMaximize }: ProjectsProps = {}
                 )}
               </div>
 
+              {activeProject.repositoryLink && <a href={activeProject.repositoryLink} target="_blank" rel="noopener noreferrer" className="mb-5 inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-900">View source code <ExternalLink size={14} /></a>}
+
               {/* Description */}
               <p className="text-[17px] md:text-lg text-gray-600 leading-relaxed mb-12 max-w-4xl">
                 {activeProject.description}
               </p>
 
               {/* Metadata Columns */}
-              <div className="flex flex-col sm:flex-row gap-12 sm:gap-24 mb-16">
+              <div className="flex flex-col sm:flex-row gap-8 sm:gap-16">
                 <div>
                   <h3 className="text-[15px] font-medium text-gray-400 mb-2">
                     <LetterReveal text="Category" />
@@ -171,20 +164,28 @@ export function Projects({ onClose, onMinimize, onMaximize }: ProjectsProps = {}
                   </p>
                 </div>
               </div>
+              {(activeProject.year || activeProject.role || activeProject.serviceProvided || activeProject.techStack.length > 0) && <div className="mt-7 border-t border-[#e5eaf2] pt-5">
+                <dl className="flex flex-wrap gap-x-9 gap-y-4 text-sm">{[["Year", activeProject.year], ["Role", activeProject.role], ["Services", activeProject.serviceProvided]].filter(([, value]) => value).map(([label, value]) => <div key={label}><dt className="mb-1 text-xs text-slate-400">{label}</dt><dd className="text-slate-700">{value}</dd></div>)}</dl>
+                <div className="mt-4 flex flex-wrap gap-2">{activeProject.techStack.map(tech => <span key={tech} className="rounded-full border border-[#e5eaf2] bg-white px-3 py-1 text-xs text-slate-500">{tech}</span>)}</div>
+              </div>}
+              </div>
 
               {/* Featured Image */}
-              <div className="w-full rounded-[20px] overflow-hidden bg-gray-50 border border-gray-100 shadow-sm relative aspect-[16/10]">
+              {activeProject.image && <div className={`${styles.preview} mt-7 w-full overflow-hidden border relative ${activeProject.isTall ? "aspect-[3/4]" : "aspect-[16/10]"}`}>
                 <Image
                   src={activeProject.image}
                   alt={activeProject.title}
                   fill
                   className="object-cover"
-                  sizes="(max-width: 768px) 100vw, 100vw"
+                  sizes="(max-width: 767px) 100vw, 65vw"
                   priority
+                  unoptimized={Boolean(activeProject.imagePath) || activeProject.image.startsWith("data:")}
                 />
-              </div>
+              </div>}
+              {[{ title: "Goal", text: activeProject.goal?.text }, { title: "Challenge", text: activeProject.challenge?.text }, { title: "Result", text: activeProject.result?.text }].filter(section => section.text).map(section => <section key={section.title} className={`${styles.panel} mt-6`}><h2 className="mb-3 text-lg font-semibold">{section.title}</h2><p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-500">{section.text}</p></section>)}
 
-            </motion.div>
+
+            </motion.div> : !loading && !error ? <div key="empty" className="py-16 text-center"><h1 className="text-2xl font-semibold">No public projects yet</h1><p className="mt-3 text-sm text-slate-500">Projects will appear here when they are made public.</p></div> : null}
           </AnimatePresence>
         </div>
       </div>

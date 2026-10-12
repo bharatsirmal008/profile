@@ -6,10 +6,14 @@ export interface Project {
   role: string;
   description: string;
   image: string;
+  imagePath?: string;
   isTall: boolean;
+  isPrivate?: boolean;
+  isDeleted?: boolean;
   client: string;
   serviceProvided: string;
   liveLink?: string;
+  repositoryLink?: string;
   techStack: string[];
   goal: {
     text: string;

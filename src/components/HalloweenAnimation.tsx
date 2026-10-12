@@ -10,6 +10,7 @@ export type HalloweenAnimationProps = {
   /** Playback multiplier. 1 = a six-second loop. */
   speed?: number;
   controls?: boolean;
+  paused?: boolean;
   className?: string;
 };
 
@@ -50,7 +51,7 @@ function Timeline({ clock, onSeek }: { clock: MotionValue<number>; onSeek: (valu
 }
 
 /** Code-only SVG wallpaper. Set controls={false} for a clean 16:9 embed. */
-export function HalloweenAnimation({ greeting = "Happy", title = "HALLOWEEN", color = "#ed151f", speed = 1, controls = true, className = "" }: HalloweenAnimationProps) {
+export function HalloweenAnimation({ greeting = "Happy", title = "HALLOWEEN", color = "#ed151f", speed = 1, controls = true, paused = false, className = "" }: HalloweenAnimationProps) {
   const id = useId().replace(/:/g, "");
   const reducedMotion = useSyncExternalStore(subscribeMotionPreference, () => window.matchMedia("(prefers-reduced-motion: reduce)").matches, () => true);
   const [requestedPlayback, setRequestedPlayback] = useState<boolean | null>(null);
@@ -67,7 +68,7 @@ export function HalloweenAnimation({ greeting = "Happy", title = "HALLOWEEN", co
   // One Motion clock keeps morphs, text, seeking, replay and pauses in sync.
   // Clamping the delta avoids skipping the sequence after a background tab resumes.
   useAnimationFrame((_, delta) => {
-    if (!playing) return;
+    if (!playing || paused || document.hidden) return;
     if (!started.current) {
       started.current = true;
       clock.set(0);

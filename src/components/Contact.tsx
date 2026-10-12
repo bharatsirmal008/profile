@@ -38,7 +38,7 @@ export function Contact() {
 
    return (
     <div className="w-full h-full bg-white font-sans overflow-y-auto">
-      <div className="max-w-3xl mx-auto p-8 md:p-12 pb-24 flex flex-col min-h-full relative">
+      <div className="max-w-3xl mx-auto p-5 sm:p-8 md:p-12 pb-24 flex flex-col min-h-full relative">
         
         {/* Header Row */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12">
@@ -74,7 +74,7 @@ export function Contact() {
                 type="text"
                 required
                 placeholder="Enter your name"
-                className="w-full bg-white border border-gray-200 rounded-lg px-4 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-200 focus:border-gray-400 transition-all text-[15px]"
+                className="w-full bg-white border border-gray-200 rounded-[var(--portfolio-radius)] px-4 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-200 focus:border-gray-400 transition-all text-[15px]"
               />
             </div>
 
@@ -87,7 +87,7 @@ export function Contact() {
                 type="email"
                 required
                 placeholder="Enter your email"
-                className="w-full bg-white border border-gray-200 rounded-lg px-4 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-200 focus:border-gray-400 transition-all text-[15px]"
+                className="w-full bg-white border border-gray-200 rounded-[var(--portfolio-radius)] px-4 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-200 focus:border-gray-400 transition-all text-[15px]"
               />
             </div>
 
@@ -99,7 +99,7 @@ export function Contact() {
                 name="message"
                 required
                 placeholder="Enter your message"
-                className="w-full min-h-[140px] bg-white border border-gray-200 rounded-lg px-4 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-200 focus:border-gray-400 transition-all resize-y text-[15px]"
+                className="w-full min-h-[140px] bg-white border border-gray-200 rounded-[var(--portfolio-radius)] px-4 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-200 focus:border-gray-400 transition-all resize-y text-[15px]"
               />
             </div>
 
@@ -107,7 +107,7 @@ export function Contact() {
               <button
                 type="submit"
                 disabled={status === "loading"}
-                className="px-8 py-3 bg-[#f0f0f0] hover:bg-[#e4e4e4] text-gray-900 font-semibold rounded-xl transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center min-w-[120px]"
+                className="px-8 py-3 bg-[#f0f0f0] hover:bg-[#e4e4e4] text-gray-900 font-semibold rounded-[var(--portfolio-radius)] transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center min-w-[120px]"
               >
                 {status === "loading" ? (
                    <>

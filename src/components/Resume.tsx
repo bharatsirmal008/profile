@@ -1,224 +1,97 @@
 "use client";
 
-import React, { useRef } from "react";
-import { Download } from "lucide-react";
+import React, { useRef, useState } from "react";
+import Link from "next/link";
+import { ArrowLeft, Download, Pencil, Save, Plus, Trash2 } from "lucide-react";
 import { LetterReveal } from "./LetterReveal";
 import { useReactToPrint } from "react-to-print";
+import { saveLocalResume, useResumeContent } from "@/lib/local-resume";
+import { cloudEnabled } from "@/lib/supabase";
+import type { ResumeData, ResumeEntry } from "@/lib/resume-data";
 
-export function Resume({ focusSocial }: { focusSocial?: (id: string) => void }) {
+function EditField({ label, value, onChange, multiline = false }: { label: string; value: string; onChange: (value: string) => void; multiline?: boolean }) {
+  const className = "w-full min-w-0 rounded-[var(--portfolio-radius)] border border-blue-200 bg-blue-50/40 px-2 py-1.5 text-sm font-normal normal-case tracking-normal text-slate-900 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100";
+  return <label className="block min-w-0 flex-1"><span className="sr-only">{label}</span>{multiline ? <textarea aria-label={label} value={value} onChange={event => onChange(event.target.value)} rows={Math.min(6, Math.max(2, Math.ceil(value.length / 90)))} maxLength={4000} className={className} /> : <input aria-label={label} value={value} onChange={event => onChange(event.target.value)} maxLength={300} className={className} />}</label>;
+}
+function safeLink(value: string) {
+  try { const url = new URL(value); return ["http:", "https:"].includes(url.protocol) ? url.href : undefined; } catch { return undefined; }
+}
+
+export function Resume({ editable = false }: { editable?: boolean }) {
+  const { resume: savedResume, loading, error: loadError } = useResumeContent();
+  const [saving, setSaving] = useState(false);
+  const [draft, setDraft] = useState<ResumeData | null>(null);
+  const [editing, setEditing] = useState(editable);
+  const [notice, setNotice] = useState("");
+  const [error, setError] = useState("");
+  const data = draft || savedResume;
   const contentRef = useRef<HTMLDivElement>(null);
-  const handleDownloadPDF = useReactToPrint({ 
+  const handleDownloadPDF = useReactToPrint({
     contentRef,
-    documentTitle: "Bharat_Sirmal_Resume",
-    pageStyle: "@page { size: auto; margin: 10mm; } @media print { html, body { font-family: 'Times New Roman', Times, serif; font-size: 14px !important; color: black !important; zoom: 0.9; } }"
+    documentTitle: `${data.name.replace(/[^a-z0-9]+/gi, "_")}_Resume`,
+    pageStyle: "@page { size: auto; margin: 10mm; } @media print { html, body { font-family: 'Times New Roman', Times, serif; font-size: 14px !important; color: black !important; zoom: 0.9; } }",
   });
+  const update = (change: (current: ResumeData) => ResumeData) => {
+    setDraft(current => change(current || savedResume));
+    setNotice("");
+    setError("");
+  };
+  const updateEntry = (sectionId: string, entryId: string, change: (entry: ResumeEntry) => ResumeEntry) => update(current => ({ ...current, sections: current.sections.map(section => section.id === sectionId ? { ...section, entries: section.entries.map(entry => entry.id === entryId ? change(entry) : entry) } : section) }));
+  const save = async () => {
+    if (saving || loading || loadError) return;
+    setError("");
+    if (!data.name.trim()) { setError("Enter your name before saving."); return; }
+    if (data.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) { setError("Enter a valid email address."); return; }
+    if ([data.linkedin, data.github, data.portfolio].some(link => link && !safeLink(link))) { setError("Profile links must be valid http:// or https:// URLs."); return; }
+    setSaving(true);
+    try {
+      await saveLocalResume(data);
+      setDraft(null);
+      setEditing(false);
+      setNotice(cloudEnabled ? "Resume published successfully. All visitors can see the updated content." : "Resume saved in this browser.");
+    } catch { setError("Could not save the resume. Check your connection and admin access. Your edits are kept so you can retry."); }
+    finally { setSaving(false); }
+  };
+
+  if (loading || loadError) return <div className="p-6 text-sm text-slate-600" role={loadError ? "alert" : "status"}>{loadError || "Loading resume…"}</div>;
 
   return (
-    <div className="w-full h-full bg-white text-black overflow-y-auto relative" style={{ fontFamily: "'Times New Roman', Times, serif" }}>
-      <div ref={contentRef} className="max-w-4xl mx-auto p-8 md:p-12 lg:p-16 pb-32 print:p-0 flex flex-col gap-6 print:gap-3 relative bg-white leading-relaxed">
-        
-        {/* Header */}
-        <header className="flex flex-col items-center justify-center relative mb-2 print:mb-0">
-          <button 
-            onClick={() => handleDownloadPDF()}
-            className="absolute right-0 top-0 flex items-center gap-2 px-4 py-2 bg-gray-900 text-white font-sans text-sm font-semibold rounded-lg hover:bg-gray-800 transition-colors shadow-sm print:hidden"
-          >
-            <Download className="w-4 h-4" />
-            Download Resume
-          </button>
-          
-          <h1 className="text-3xl md:text-4xl print:text-2xl font-bold tracking-tight text-center uppercase mb-3">
-            <LetterReveal text="BHARAT SIRMAL" />
-          </h1>
-          
-          <div className="flex flex-wrap justify-center items-center gap-1.5 text-[14px] font-medium">
-            <a href="mailto:sirmalbharat99@gmail.com" className="hover:underline">
-              sirmalbharat99@gmail.com
-            </a>
-            <span>|</span>
-            {focusSocial ? (
-              <button type="button" onClick={() => focusSocial("linkedin")} className="hover:underline">Linkedin</button>
-            ) : (
-              <a href="https://www.linkedin.com/in/bharat-sirmal/" target="_blank" rel="noopener noreferrer" className="hover:underline">Linkedin</a>
-            )}
-            <span>|</span>
-            {focusSocial ? (
-              <button type="button" onClick={() => focusSocial("github")} className="hover:underline">Github</button>
-            ) : (
-              <a href="https://github.com/bharatsirmal008" target="_blank" rel="noopener noreferrer" className="hover:underline">Github</a>
-            )}
-            <span>|</span>
-            <a href="#" className="hover:underline">
-              Portfolio-Bharat Sirmal
-            </a>
-            <span>|</span>
-            <span>
-              Mumbai, Maharashtra, India
-            </span>
-          </div>
+    <div className="h-full w-full overflow-y-auto bg-white text-black" style={{ fontFamily: "'Times New Roman', Times, serif" }}>
+      <div className="sticky top-0 z-10 flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 bg-white/95 px-5 py-3 font-sans backdrop-blur print:hidden">
+        <div className="text-xs text-slate-500">{editing ? "Edit your resume directly in this window. Save changes to update your resume." : "Resume"}</div>
+        <div className="flex flex-wrap gap-2">
+          {editable && <Link href="/admin" className="inline-flex min-h-9 items-center gap-2 rounded-[var(--portfolio-radius)] border border-blue-100 bg-white px-3 py-2 text-xs font-medium text-blue-600 hover:bg-blue-50"><ArrowLeft size={14} />Back to admin</Link>}
+          {editable && (editing ? <><button type="button" onClick={save} disabled={saving} className="inline-flex items-center gap-2 rounded-[var(--portfolio-radius)] bg-blue-600 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-700"><Save size={14} />{saving ? "Saving…" : "Save changes"}</button><button type="button" onClick={() => { setDraft(null); setEditing(false); setError(""); setNotice(""); }} className="rounded-[var(--portfolio-radius)] border border-slate-200 px-3 py-2 text-xs text-slate-600">Cancel</button></> : <button type="button" onClick={() => { setEditing(true); setNotice(""); }} className="inline-flex items-center gap-2 rounded-[var(--portfolio-radius)] border border-slate-200 px-3 py-2 text-xs text-slate-600"><Pencil size={14} />Edit resume</button>)}
+          <button type="button" onClick={() => handleDownloadPDF()} disabled={editing} className="inline-flex items-center gap-2 rounded-[var(--portfolio-radius)] bg-gray-900 px-3 py-2 text-xs font-semibold text-white hover:bg-gray-800 disabled:opacity-40"><Download size={14} />Download Resume</button>
+        </div>
+        {error && <p role="alert" className="w-full text-sm text-red-600">{error}</p>}
+        {notice && <p role="status" className="w-full text-xs text-emerald-700">{notice}</p>}
+      </div>
+      <div ref={contentRef} className="relative mx-auto flex max-w-4xl flex-col gap-6 bg-white p-6 pb-24 leading-relaxed md:p-12 lg:p-16 print:gap-3 print:p-0">
+        <header className="mb-2 flex flex-col items-center justify-center print:mb-0">
+          <h1 className="mb-3 w-full text-center text-3xl font-bold uppercase tracking-tight md:text-4xl print:text-2xl">{editing ? <EditField label="Name" value={data.name} onChange={name => update(current => ({ ...current, name }))} /> : <LetterReveal text={data.name} />}</h1>
+          {editing ? <div className="grid w-full gap-3 font-sans sm:grid-cols-2">{([ ["email", "Email"], ["location", "Location"], ["linkedin", "LinkedIn URL"], ["github", "GitHub URL"], ["portfolio", "Portfolio URL"] ] as const).map(([key, label]) => <div key={key}><p className="mb-1 text-xs text-slate-500">{label}</p><EditField label={label} value={data[key]} onChange={value => update(current => ({ ...current, [key]: value }))} /></div>)}</div> : <div className="flex flex-wrap items-center justify-center gap-1.5 break-words text-center text-[14px] font-medium">
+            {data.email && <a href={`mailto:${data.email}`} className="text-blue-600 hover:text-blue-800 hover:underline">{data.email}</a>}
+            {data.linkedin && <><span>|</span><a href={safeLink(data.linkedin)} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 hover:underline">LinkedIn</a></>}
+            {data.github && <><span>|</span><a href={safeLink(data.github)} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 hover:underline">GitHub</a></>}
+            {data.portfolio && <><span>|</span><a href={safeLink(data.portfolio)} className="text-blue-600 hover:text-blue-800 hover:underline">Portfolio-{data.name}</a></>}
+            {data.location && <><span>|</span><span>{data.location}</span></>}
+          </div>}
         </header>
-
-        {/* Education */}
-        <section>
-          <h2 className="text-lg font-bold uppercase mb-3 print:mb-2 border-b-2 border-black pb-1">
-            <LetterReveal text="EDUCATION" />
-          </h2>
-          <div className="flex flex-col gap-4 print:gap-1 text-[14px]">
-            <div>
-              <div className="flex justify-between items-start">
-                <div>
-                  <strong>B.Tech in Computer Science</strong>
-                  <span className="mx-1">—</span>
-                  <span>Pillai College of Engineering, Panvel</span>
-                </div>
-                <div className="italic shrink-0 ml-4">
-                  2023 – 2027
-                </div>
-              </div>
-              <div className="mt-0.5">
-                CGPA: 8.74 / 10.0
-              </div>
+        {data.sections.map(section => <section key={section.id}>
+          <h2 className="mb-3 border-b-2 border-black pb-1 text-lg font-bold uppercase print:mb-2">{editing ? <EditField label={`${section.title} section heading`} value={section.title} onChange={title => update(current => ({ ...current, sections: current.sections.map(item => item.id === section.id ? { ...item, title } : item) }))} /> : <LetterReveal text={section.title} />}</h2>
+          <div className={`flex flex-col text-[14px] ${section.id === "skills" ? "gap-1" : "gap-4"} print:gap-1`}>{section.entries.map(entry => <div key={entry.id} className={editing ? "rounded-[var(--portfolio-radius)] border border-slate-100 p-3" : ""}>
+            <div className="flex flex-wrap items-start justify-between gap-2">
+              {editing ? <EditField label={`${section.title} entry title`} value={entry.title} onChange={title => updateEntry(section.id, entry.id, item => ({ ...item, title }))} /> : entry.title && <strong>{entry.title}</strong>}
+              {editing ? <EditField label={`${entry.title} dates`} value={entry.date} onChange={date => updateEntry(section.id, entry.id, item => ({ ...item, date }))} /> : entry.date && <span className="italic">{entry.date}</span>}
             </div>
-            
-            <div>
-              <div className="flex justify-between items-start">
-                <div>
-                  <strong>Class 12 (Higher Secondary)</strong>
-                  <span className="mx-1">—</span>
-                  <span>KMC Balkumari, Lalitpur Nepal</span>
-                </div>
-                <div className="italic shrink-0 ml-4">
-                  2020 – 2022
-                </div>
-              </div>
-              <div className="mt-0.5">
-                GPA: 3.14 / 4.0
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Skills */}
-        <section>
-          <h2 className="text-lg font-bold uppercase mb-3 print:mb-2 border-b-2 border-black pb-1">
-            <LetterReveal text="SKILLS" />
-          </h2>
-          <div className="flex flex-col gap-1 print:gap-0.5 text-[14px]">
-            <div>
-              <strong>Programming Languages:</strong>
-              <span className="ml-1">Python, JavaScript,C++, SQL</span>
-            </div>
-            <div>
-              <strong>Data & Databases:</strong>
-              <span className="ml-1">MongoDB, MySQL, SQL querying</span>
-            </div>
-            <div>
-              <strong>Productivity & Tools:</strong>
-              <span className="ml-1">Microsoft Excel, Google Sheets, Postman, GitHub, Cloudinary</span>
-            </div>
-            <div>
-              <strong>Cloud & Platforms:</strong>
-              <span className="ml-1">Google Cloud (Data Analytics), Firebase, Vercel</span>
-            </div>
-          </div>
-        </section>
-
-        {/* Projects */}
-        <section>
-          <h2 className="text-lg font-bold uppercase mb-3 print:mb-2 border-b-2 border-black pb-1">
-            <LetterReveal text="PROJECTS" />
-          </h2>
-          <div className="flex flex-col gap-5 print:gap-2 text-[14px]">
-            
-            {/* YAOP */}
-            <div>
-              <strong className="block mb-1">
-                YAOP Community Platform
-              </strong>
-              <ul className="list-disc ml-5 space-y-1">
-                <li className="pl-1">
-                  Designed and managed a centralized MongoDB database, organizing structured data for events and volunteers with full accuracy and consistency across all records.
-                </li>
-                <li className="pl-1">
-                  Processed and validated donation entries with complete data integrity by implementing Firebase authentication and structured data workflows.
-                </li>
-                <li className="pl-1">
-                  Built an admin dashboard that streamlined data entry and record updates, reducing manual effort by ~40% and minimizing input errors.
-                </li>
-                <li className="pl-1">
-                  Technologies: Next.js, Express.js, MongoDB, Firebase, Cloudinary
-                </li>
-              </ul>
-            </div>
-
-            {/* FrameForge */}
-            <div>
-              <strong className="block mb-1">
-                FrameForge Gaming Platform
-              </strong>
-              <ul className="list-disc ml-5 space-y-1">
-                <li className="pl-1">
-                  Designed and maintained structured MongoDB schemas for users, products, and orders, ensuring clean, queryable, and consistent records.
-                </li>
-                <li className="pl-1">
-                  Engineered RESTful APIs to handle high-volume CRUD (create, read, update, delete) data operations reliably and efficiently.
-                </li>
-                <li className="pl-1">
-                  Implemented role-based data access control, enforcing strict segregation between admin and user records with zero unauthorized access.
-                </li>
-                <li className="pl-1">
-                  Conducted data validation and performance testing using Postman to verify the accuracy and integrity of all API data flows.Collaborated in a 4-member team using Git for version control and task coordination.
-                </li>
-                <li className="pl-1">
-                  Technologies: React.js, Express.js, MongoDB, Firebase, REST APIs, Postman
-                </li>
-              </ul>
-            </div>
-          </div>
-        </section>
-
-        {/* Internship */}
-        <section>
-          <h2 className="text-lg font-bold uppercase mb-3 print:mb-2 border-b-2 border-black pb-1">
-            <LetterReveal text="INTERNSHIP" />
-          </h2>
-          <div className="text-[14px]">
-            <div className="mb-1">
-              <strong>Web Development Internship</strong>
-              <span className="mx-1">|</span>
-              <span>May 2026 – Jun 2026</span>
-            </div>
-            <div className="mb-1">
-              Company Name: InAmigos Foundation
-            </div>
-            <p className="mb-1">
-              Assisted in developing and maintaining the organization's website using HTML, CSS, and JavaScript. Designed and implemented new features to enhance site functionality, and improved the layout and structure to make the website more visually attractive and easier to manage.
-            </p>
-            <div>
-              Technology Used: HTML, CSS, JavaScript,React, Node.js, MongoDB
-            </div>
-          </div>
-        </section>
-
-        {/* Certifications & Achievements */}
-        <section>
-          <h2 className="text-lg font-bold uppercase mb-3 print:mb-2 border-b-2 border-black pb-1">
-            <LetterReveal text="CERTIFICATIONS & ACHIEVEMENTS" />
-          </h2>
-          <ul className="list-disc ml-5 space-y-2 print:space-y-0.5 text-[14px]">
-            <li className="pl-1">
-              <strong>Google Cloud Data Analytics Certificate</strong>
-              <span className="mx-1">—</span>
-              <span>Hands-on experience with cloud-based data pipelines, data analysis, and structured reporting tools.</span>
-            </li>
-            <li className="pl-1">
-              <strong>Google Cloud Career Launchpad (Foundations Track)</strong>
-              <span className="mx-1">—</span>
-              <span>Training in cloud computing fundamentals, data management, and analytics best practices.</span>
-            </li>
-          </ul>
-        </section>
-
+            {editing ? <div className="mt-2"><EditField label={`${entry.title} organization or subtitle`} value={entry.subtitle} onChange={subtitle => updateEntry(section.id, entry.id, item => ({ ...item, subtitle }))} /></div> : entry.subtitle && <p>{entry.subtitle}</p>}
+            {editing ? <div className="mt-3 space-y-2">{entry.details.map((detail, index) => <div key={index} className="flex items-start gap-2"><EditField label={`${entry.title} detail ${index + 1}`} value={detail} multiline onChange={value => updateEntry(section.id, entry.id, item => ({ ...item, details: item.details.map((text, i) => i === index ? value : text) }))} /><button type="button" aria-label={`Remove detail ${index + 1} from ${entry.title}`} onClick={() => updateEntry(section.id, entry.id, item => ({ ...item, details: item.details.filter((_, i) => i !== index) }))} className="p-2 text-red-500"><Trash2 size={14} /></button></div>)}
+              <div className="flex flex-wrap items-center gap-4 font-sans text-xs"><button type="button" onClick={() => updateEntry(section.id, entry.id, item => ({ ...item, details: [...item.details, ""] }))} className="inline-flex items-center gap-1 text-blue-600"><Plus size={13} />Add line</button><label className="flex items-center gap-2 text-slate-500"><input type="checkbox" checked={entry.bullets} onChange={event => updateEntry(section.id, entry.id, item => ({ ...item, bullets: event.target.checked }))} />Bullet points</label><button type="button" onClick={() => update(current => ({ ...current, sections: current.sections.map(item => item.id === section.id ? { ...item, entries: item.entries.filter(row => row.id !== entry.id) } : item) }))} className="ml-auto inline-flex items-center gap-1 text-red-500"><Trash2 size={13} />Remove entry</button></div>
+            </div> : entry.bullets ? <ul className="ml-5 mt-1 list-disc space-y-1">{entry.details.filter(Boolean).map((detail, index) => <li key={index} className="whitespace-pre-wrap pl-1">{detail}</li>)}</ul> : entry.details.filter(Boolean).map((detail, index) => <p key={index} className="mt-0.5 whitespace-pre-wrap">{detail}</p>)}
+          </div>)}</div>
+          {editing && <button type="button" onClick={() => update(current => ({ ...current, sections: current.sections.map(item => item.id === section.id ? { ...item, entries: [...item.entries, { id: crypto.randomUUID(), title: "New entry", subtitle: "", date: "", details: [""], bullets: false }] } : item) }))} className="mt-3 inline-flex items-center gap-1 rounded-[var(--portfolio-radius)] border border-blue-100 px-3 py-2 font-sans text-xs text-blue-600"><Plus size={14} />Add entry</button>}
+        </section>)}
       </div>
     </div>
   );

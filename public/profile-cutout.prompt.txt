@@ -1,0 +1,4 @@
+Mode: built-in image_gen editing, transparent_background: true.
+Source: public/profile_image.jpeg
+
+Use case: background-extraction. Edit target: the supplied original portrait of Bharat in a white shirt and dark tie. Remove only the maroon background and return a clean photorealistic cutout on actual transparent alpha. Preserve the exact person's identity, face, smile, hair, skin, clothing, pose, lighting and original framing. Keep fine natural hair edges, no maroon halo. Do not add any objects, text, border, shadow, gradient or new background. This cutout will sit over a purple-blue CSS gradient in a portfolio.

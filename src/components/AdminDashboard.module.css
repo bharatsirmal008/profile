@@ -1,0 +1,24 @@
+.desktop{min-height:100dvh;padding:4px;background:#e8edf7;color:#10192c;font-family:Arial,Helvetica,sans-serif}
+.window{position:relative;isolation:isolate;min-height:calc(100dvh - 8px);overflow:hidden;border:1px solid #ffffffdc;border-radius:20px;background:radial-gradient(ellipse at 44% 90%,#dfe9fc80,transparent 65%),linear-gradient(125deg,#f5f9ff,#fdfdff 58%,#f4f8ff);box-shadow:0 8px 32px #6a85b21a}
+.titlebar{position:relative;z-index:1;height:38px;display:flex;align-items:center;justify-content:space-between;padding:0 22px;background:linear-gradient(100deg,#e2ebfaad,#eeeef4a8);border-bottom:1px solid #edf0f5}
+.trafficLights,.toolbarIcons{display:flex;align-items:center;gap:8px}
+.trafficLights span{width:12px;height:12px;border-radius:50%;background:#ff5f57;box-shadow:inset 0 0 0 1px #00000008}
+.trafficLights span:nth-child(2){background:#febc2e}.trafficLights span:nth-child(3){background:#28c840}
+.toolbarIcons{gap:24px;color:#4b5c7b}
+.ambientWaves{position:absolute;inset:38px 0 0;width:100%;height:calc(100% - 38px);z-index:-1;pointer-events:none}
+.content{width:min(100%,790px);margin:0 auto;padding:30px 24px 100px}
+.back{display:inline-flex;align-items:center;gap:8px;color:#1462ff;font-size:14px;text-decoration:none;min-height:28px}
+.content h1{margin:12px 0 18px;font-size:36px;line-height:1.2;letter-spacing:-1.3px;font-weight:750}
+.navigation{display:flex;flex-wrap:wrap;gap:14px;margin-bottom:22px}
+.navigation a{display:inline-flex;align-items:center;justify-content:center;gap:11px;min-height:46px;padding:10px 19px;border:1px solid #e6ecf7;border-radius:15px;background:#ffffffb8;box-shadow:0 3px 6px #7c92bf0e,0 8px 16px #6177af06;font-size:14px;color:#41516f;text-decoration:none;transition:background .18s,box-shadow .18s,transform .18s}
+.navigation a svg{color:#697998;flex-shrink:0}.navigation .primaryLink{background:#e5f0ffb8;color:#0860ff;border-color:#deebff}.navigation .primaryLink svg{color:#0860ff}
+.navigation a:hover{transform:translateY(-2px);background:#fff;box-shadow:0 7px 18px #6177af15}
+.importCard{display:flex;align-items:flex-start;gap:22px;padding:24px;border:1px solid #e5eafa;border-radius:18px;background:#ffffffc4;backdrop-filter:blur(16px);box-shadow:0 13px 25px #5e77bd13,0 3px 6px #6573b30b,inset 0 1px 0 #fff}
+.databaseIcon{display:grid;place-items:center;flex-shrink:0;width:54px;height:54px;border-radius:15px;color:#1264ff;background:linear-gradient(135deg,#e7efff,#dceaff)}
+.cardContent{flex:1;min-width:0;padding-top:5px}.cardContent h2{font-size:20px;font-weight:700;line-height:1.3;letter-spacing:-.5px;margin:0 0 15px}.cardContent p{font-size:13px;line-height:1.6;color:#435472;margin:0 0 12px}
+.importButton{display:inline-flex;align-items:center;justify-content:center;gap:11px;max-width:100%;min-height:43px;margin-top:3px;padding:11px 18px;border:1px solid #4086ff;border-radius:12px;color:#fff;background:linear-gradient(#2b7aff,#0860fa);box-shadow:0 5px 12px #1c6aff20,inset 0 1px 0 #ffffff30;font-size:13px;text-align:left;transition:filter .18s,box-shadow .18s;cursor:pointer}.importButton svg{flex-shrink:0}.importButton:hover{filter:brightness(1.05);box-shadow:0 6px 16px #1c6aff32}.importButton:disabled{opacity:.65;cursor:wait}
+.success{display:flex;align-items:center;gap:12px;margin-top:16px;padding:13px 15px;border-radius:13px;background:#e3f4ecb8;color:#00894e;font-size:12px;line-height:1.5;overflow-wrap:anywhere}.checkIcon{display:grid;place-items:center;flex-shrink:0;width:22px;height:22px;border-radius:50%;background:#23ad6b;color:#fff}.success>svg{flex-shrink:0}.cardContent .error{margin-top:16px;padding:12px;border-radius:12px;background:#fff0f0;color:#b42336}
+.back:focus-visible,.navigation a:focus-visible,.importButton:focus-visible{outline:2px solid #1767ff;outline-offset:4px}
+@media(min-width:1200px){.content{padding-top:40px}}
+@media(max-width:640px){.desktop{padding:0}.window{min-height:100dvh;border:0;border-radius:0}.titlebar{padding:0 16px}.content{padding:24px 18px 110px}.content h1{font-size:30px}.navigation{gap:9px}.navigation a{flex:1 1 145px;padding:10px 12px;font-size:12px}.navigation a:last-child{flex-grow:0}.importCard{gap:14px;padding:19px 16px;flex-direction:column}.databaseIcon{width:46px;height:46px}.cardContent{padding-top:0;width:100%}.cardContent h2{font-size:19px}.importButton{width:100%;font-size:12px}.ambientWaves{opacity:.7}}
+@media(prefers-reduced-motion:reduce){.navigation a,.importButton{transition:none}.navigation a:hover{transform:none}}

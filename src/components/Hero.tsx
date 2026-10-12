@@ -1,11 +1,10 @@
 "use client";
 
-import React, { useRef, useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import React, { useRef, useState, useEffect, useSyncExternalStore } from "react";
+import dynamic from "next/dynamic";
+import Image from "next/image";
+import { motion } from "framer-motion";
 import { HalloweenAnimation } from "./HalloweenAnimation";
-import { DesktopWindow } from "./DesktopWindow";
-import { LinkedInApp } from "./LinkedInApp";
-import { GitHubApp } from "./GitHubApp";
 import Link from "next/link";
 import {
   MousePointer2,
@@ -20,20 +19,46 @@ import {
   Minus,
   Maximize2,
   UserPlus,
-  Linkedin,
-  Github,
-  Instagram,
+  ChevronLeft,
 } from "lucide-react";
-import { About } from "@/components/About";
-import { Projects } from "@/components/Projects";
-import { Education } from "@/components/Education";
-import { SkillsMarquee } from "@/components/SkillsMarquee";
-import { Contact } from "@/components/Contact";
-import { Resume } from "@/components/Resume";
-import { Assistant } from "@/components/Assistant";
 import { LetterReveal } from "./LetterReveal";
+import { HeaderSocialLinks } from "./HeaderSocialLinks";
+
+const loading = () => <div role="status" className="grid min-h-40 flex-1 place-items-center bg-white p-6 text-sm text-slate-500">Opening app…</div>;
+const About = dynamic(() => import("./About").then(module => module.About), { loading });
+const Projects = dynamic(() => import("./Projects").then(module => module.Projects), { loading });
+const Education = dynamic(() => import("./Education").then(module => module.Education), { loading });
+const SkillsMarquee = dynamic(() => import("./SkillsMarquee").then(module => module.SkillsMarquee), { loading });
+const Contact = dynamic(() => import("./Contact").then(module => module.Contact), { loading });
+const Resume = dynamic(() => import("./Resume").then(module => module.Resume), { loading });
+const Assistant = dynamic(() => import("./Assistant").then(module => module.Assistant), { loading });
+const Certificates = dynamic(() => import("./Certificates").then(module => module.Certificates), { loading });
 
 const FOLDERS = [
+  {
+    id: "resume",
+    label: "Resume",
+    initialX: 136,
+    initialY: 48,
+    delay: 0.7,
+    image: "/resume.svg",
+  },
+  {
+    id: "contact",
+    label: "Contact",
+    initialX: 136,
+    initialY: 176,
+    delay: 0.8,
+    image: "/contact_image.avif",
+  },
+  {
+    id: "certificates",
+    label: "Certificates",
+    initialX: 136,
+    initialY: 304,
+    delay: 0.65,
+    image: "/certificates.png",
+  },
   {
     id: "about",
     label: "About",
@@ -93,10 +118,12 @@ function DraggableFolder({
   folder,
   onClick,
   running = false,
+  compact = false,
 }: {
   folder: any;
   onClick: () => void;
   running?: boolean;
+  compact?: boolean;
 }) {
   const [pos, setPos] = useState({ x: folder.initialX, y: folder.initialY });
   const [offset, setOffset] = useState({ x: 0, y: 0 });
@@ -132,6 +159,7 @@ function DraggableFolder({
   }, [folder.id]);
 
   useEffect(() => {
+    if (compact) return;
     const handlePointerMove = (e: PointerEvent) => {
       const state = stateRef.current;
       state.currentPointer = { x: e.clientX, y: e.clientY };
@@ -207,9 +235,10 @@ function DraggableFolder({
       window.removeEventListener("pointerup", handlePointerUp);
       if (stateRef.current.timer) clearTimeout(stateRef.current.timer);
     };
-  }, [folder.id]);
+  }, [folder.id, compact]);
 
   const onPointerDown = (e: React.PointerEvent) => {
+    if (compact) return;
     if (e.button !== 0) return; // Left click only
     e.stopPropagation();
 
@@ -240,11 +269,11 @@ function DraggableFolder({
         bounce: 0.5,
         delay: hasAnimated ? 0 : folder.delay,
       }}
-      className={`absolute flex flex-col items-center gap-1.5 pointer-events-auto select-none ${isDragMode ? "z-[100] cursor-grabbing" : "cursor-pointer z-20"}`}
+      className={`desktop-app-icon absolute flex flex-col items-center gap-1.5 pointer-events-auto select-none ${isDragMode ? "z-[100] cursor-grabbing" : "cursor-pointer z-20"}`}
       style={{
         left: pos.x + offset.x,
         top: pos.y + offset.y,
-        touchAction: "none",
+        touchAction: compact ? "pan-y" : "none",
       }}
       role="button"
       tabIndex={0}
@@ -256,16 +285,17 @@ function DraggableFolder({
         }
       }}
       onPointerDown={onPointerDown}
+      onClick={compact ? onClick : undefined}
     >
       <div
         className={`relative w-[68px] h-[68px] transition-all drop-shadow-lg flex items-center justify-center ${isDragMode ? "drop-shadow-2xl" : "hover:scale-105"}`}
       >
-        <img
-          src={
-            folder.image ||
-            "https://framerusercontent.com/images/JNuFoJNZB5xor0NzSTUqoFLBk.png"
-          }
-          alt="Folder"
+        <Image
+          src={folder.image}
+          alt=""
+          width={68}
+          height={68}
+          sizes="(max-width: 767px) 52px, 68px"
           className="w-full h-full object-cover pointer-events-none rounded-[15px]"
           draggable={false}
         />
@@ -285,13 +315,17 @@ function DraggableWindow({
   isMaximized,
   setIsMaximized,
   setActiveWindow,
-  focusSocial,
+  onVoiceModeChange,
+  resumeEditable = false,
+  mobile = false,
 }: {
   activeWindow: string;
   isMaximized: boolean;
   setIsMaximized: (val: boolean) => void;
   setActiveWindow: (val: string | null) => void;
-  focusSocial?: (id: string) => void;
+  onVoiceModeChange?: (active: boolean) => void;
+  resumeEditable?: boolean;
+  mobile?: boolean;
 }) {
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
@@ -299,6 +333,20 @@ function DraggableWindow({
   const [isMounted, setIsMounted] = useState(false);
 
   const windowRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const fitWindow = () => {
+      const element = windowRef.current;
+      if (!element) return;
+      setPos(previous => previous ? {
+        x: Math.max(0, Math.min(previous.x, window.innerWidth - element.offsetWidth)),
+        y: Math.max(0, Math.min(previous.y, window.innerHeight - element.offsetHeight)),
+      } : null);
+      setOffset({ x: 0, y: 0 });
+    };
+    window.addEventListener("resize", fitWindow);
+    return () => window.removeEventListener("resize", fitWindow);
+  }, []);
 
   const stateRef = useRef({
     isDragMode: false,
@@ -316,18 +364,7 @@ function DraggableWindow({
 
   useEffect(() => {
     setIsMounted(true);
-    const saved = localStorage.getItem(`window_pos_${activeWindow}`);
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        setPos(parsed);
-        stateRef.current.pos = parsed;
-      } catch (e) {}
-    } else {
-      setPos(null);
-      stateRef.current.pos = null;
-    }
-  }, [activeWindow]);
+  }, []);
 
   useEffect(() => {
     const handlePointerMove = (e: PointerEvent) => {
@@ -381,10 +418,7 @@ function DraggableWindow({
 
         setPos({ x: boundedX, y: boundedY });
         setOffset({ x: 0, y: 0 });
-        localStorage.setItem(
-          `window_pos_${activeWindow}`,
-          JSON.stringify({ x: boundedX, y: boundedY }),
-        );
+
       }
     };
 
@@ -399,7 +433,7 @@ function DraggableWindow({
   }, [activeWindow, isMaximized]);
 
   const onPointerDown = (e: React.PointerEvent) => {
-    if (isMaximized) return;
+    if (isMaximized || mobile) return;
     if (e.button !== 0) return;
 
     const target = e.target as HTMLElement;
@@ -439,7 +473,7 @@ function DraggableWindow({
 
   const isCentered = !pos && !isMaximized && !isDragMode;
   let dynamicStyle: React.CSSProperties = {
-    touchAction: "none", // Prevent scrolling on the wrapper to keep touch drag smooth
+    touchAction: "pan-y", // Keep touch scrolling available inside app content.
   };
 
   if (isMaximized) {
@@ -459,58 +493,50 @@ function DraggableWindow({
   return (
     <motion.div
       ref={windowRef}
-      initial={{ opacity: 0, scale: 0.9, y: 20 }}
+      data-maximized={isMaximized}
+      data-mobile={mobile}
+      initial={mobile ? { opacity: 0 } : { opacity: 0, scale: 0.9, y: 20 }}
       animate={
-        isMaximized
+        isMaximized || mobile
           ? { opacity: 1, scale: 1, x: 0, y: 0 }
           : { opacity: 1, scale: isDragMode ? 1.02 : 1, y: 0 }
       }
-      className={`absolute z-50 overflow-hidden flex flex-col ${isDragMode ? "" : "transition-all duration-300"} ${
-        activeWindow === "resume" || activeWindow === "about"
-          ? "bg-white rounded-[10px] border border-gray-200"
+      className={`desktop-window absolute z-50 overflow-hidden flex flex-col ${isDragMode ? "" : "transition-all duration-300"} ${
+        activeWindow === "resume" || activeWindow === "about" || activeWindow === "certificates"
+          ? "bg-white rounded-[var(--portfolio-radius)] border border-gray-200"
           : activeWindow === "assistant"
-            ? "bg-black rounded-[10px] border-none"
+            ? "bg-black rounded-[var(--portfolio-radius)] border-none"
+            : activeWindow === "projects"
+              ? `bg-white border border-[#E5EAF2] ${!isMaximized ? "md:!rounded-[var(--portfolio-radius)]" : ""}`
             : "glass bg-white/95 backdrop-blur-3xl border border-white/50"
       } ${
         isDragMode
           ? "shadow-[0_40px_80px_rgba(0,0,0,0.4)] cursor-grabbing"
-          : "shadow-[0_30px_60px_rgba(0,0,0,0.3)]"
+          : activeWindow === "projects" ? "shadow-[0_24px_70px_rgba(85,110,145,0.18)]" : "shadow-[0_30px_60px_rgba(0,0,0,0.3)]"
       } ${
         isMaximized
           ? "inset-0 w-full h-full rounded-none"
           : "max-md:!inset-0 max-md:!w-full max-md:!h-full max-md:!rounded-none " +
-            (isCentered
-              ? activeWindow === "assistant"
-                ? "top-[5%] left-0 right-0 mx-auto w-[95vw] max-w-[550px] h-[85vh] max-h-[calc(100vh-100px)] rounded-[10px]"
-                : activeWindow === "contact"
-                  ? "top-[10%] left-0 right-0 mx-auto w-[95vw] max-w-[750px] h-auto max-h-[calc(100vh-160px)] rounded-[10px]"
-                  : activeWindow === "resume" || activeWindow === "about"
-                    ? "top-[10%] left-0 right-0 mx-auto w-[95vw] max-w-[900px] h-auto max-h-[calc(100vh-160px)] rounded-[10px]"
-                    : "top-[10%] left-[15%] w-[70vw] h-[75vh] rounded-2xl"
-              : // Absolute positioned layout (stripped of top/left/right/mx-auto)
-                activeWindow === "assistant"
-                ? "w-[95vw] max-w-[550px] h-[85vh] max-h-[calc(100vh-100px)] rounded-[10px]"
-                : activeWindow === "contact"
-                  ? "w-[95vw] max-w-[750px] h-auto max-h-[calc(100vh-160px)] rounded-[10px]"
-                  : activeWindow === "resume" || activeWindow === "about"
-                    ? "w-[95vw] max-w-[900px] h-auto max-h-[calc(100vh-160px)] rounded-[10px]"
-                    : "w-[70vw] h-[75vh] rounded-2xl")
+            "w-[70vw] h-[75dvh] rounded-[var(--portfolio-radius)] " +
+            (isCentered ? "top-[10%] left-[15%]" : "")
       }`}
       style={dynamicStyle}
       onPointerDown={onPointerDown}
     >
       {/* Window Title Bar */}
-      {activeWindow !== "projects" &&
+      {mobile && !["projects", "education", "skills"].includes(activeWindow) && <header className={`flex min-h-12 shrink-0 items-center gap-3 border-b px-3 ${activeWindow === "assistant" ? "border-emerald-300/10 bg-[#06120d] text-emerald-50" : "border-slate-100 bg-white text-slate-800"}`}><button type="button" aria-label="Back to desktop" onClick={() => { setActiveWindow(null); setIsMaximized(false); }} className="flex min-h-11 items-center gap-1 px-1 text-sm"><ChevronLeft size={22} />Back</button><span className="font-medium capitalize">{activeWindow === "assistant" ? "JOJO" : activeWindow}</span></header>}
+      {!mobile && activeWindow !== "projects" &&
         activeWindow !== "education" &&
         activeWindow !== "skills" && (
           <div
             className={`h-12 border-b border-zinc-200/50 flex items-center px-4 gap-2 cursor-grab shrink-0 group ${
               activeWindow === "resume" ||
+              activeWindow === "certificates" ||
               activeWindow === "about" ||
               activeWindow === "contact"
                 ? "bg-white"
                 : activeWindow === "assistant"
-                  ? "bg-[#050508] !border-white/10 text-white"
+                  ? "bg-[#06120d]/95 !border-emerald-300/10 text-white"
                   : "bg-zinc-100/50 backdrop-blur-xl"
             }`}
           >
@@ -546,61 +572,24 @@ function DraggableWindow({
             >
               <Maximize2 className="w-2 h-2 text-black/60 opacity-0 group-hover:opacity-100 transition-opacity" />
             </div>
-            {activeWindow === "resume" ||
-            activeWindow === "about" ||
-            activeWindow === "contact" ? (
-              <>
-                <div className="flex-1"></div>
-                <div className="flex items-center gap-4 text-gray-600 mr-2 pointer-events-auto">
-                  <button
-                    onClick={() => focusSocial?.("linkedin")}
-                    className="hover:text-gray-900 transition-colors"
-                    aria-label="Open LinkedIn"
-                  >
-                    <Linkedin className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => focusSocial?.("github")}
-                    className="hover:text-gray-900 transition-colors"
-                    aria-label="Open GitHub"
-                  >
-                    <Github className="w-4 h-4" />
-                  </button>
-                  <a
-                    href="https://www.instagram.com/bharat_sirmal008/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="hover:text-gray-900 transition-colors"
-                  >
-                    <Instagram className="w-4 h-4" />
-                  </a>
-                </div>
-              </>
-            ) : activeWindow === "assistant" ? (
-              <div className="flex-1 text-center font-bold text-[20px] pr-10 pointer-events-none tracking-wide">
-                <span 
-                  className="bg-gradient-to-r from-cyan-300 via-white to-orange-400 text-transparent bg-clip-text bg-[length:200%_auto] animate-gradient-x drop-shadow-sm"
-                  style={{ fontFamily: "'Amarna', sans-serif" }}
-                >
-                  <LetterReveal text="JOJO" />
-                </span>
-              </div>
-            ) : (
-              <div className="flex-1 text-center font-bold text-sm text-zinc-700 capitalize pr-10 pointer-events-none">
-                <LetterReveal text={activeWindow} />
-              </div>
-            )}
+            {activeWindow === "assistant" ? (
+              <div className="min-w-0 flex-1 text-center text-[14px] font-medium tracking-widest text-emerald-100" style={{ fontFamily: "'Amarna', sans-serif" }}><LetterReveal text="JOJO" /></div>
+            ) : activeWindow === "certificates" ? (
+              <div className="min-w-0 flex-1 text-center text-sm font-bold capitalize text-zinc-700"><LetterReveal text="Certificates" /></div>
+            ) : <div className="flex-1" />}
+            <HeaderSocialLinks dark={activeWindow === "assistant"} />
           </div>
         )}
       {/* Window Content */}
       <div
-        className={`flex-1 overflow-y-auto cursor-auto relative ${activeWindow === "resume" || activeWindow === "assistant" || activeWindow === "about" || activeWindow === "contact" ? "rounded-b-[10px]" : "rounded-b-2xl"}`}
+        className={`min-h-0 flex-1 overflow-y-auto overscroll-contain cursor-auto relative ${activeWindow === "resume" || activeWindow === "assistant" || activeWindow === "about" || activeWindow === "projects" || activeWindow === "contact" ? "rounded-b-[var(--portfolio-radius)]" : "rounded-b-[var(--portfolio-radius)]"}`}
         onPointerDown={(e) => e.stopPropagation()} // Let scrollable area swallow pointer events for touch scroll
       >
         <div
-          className={`relative ${activeWindow === "resume" || activeWindow === "about" || activeWindow === "contact" || activeWindow === "projects" || activeWindow === "education" || activeWindow === "skills" ? "p-0 bg-white h-full flex flex-col" : activeWindow === "assistant" ? "p-0 bg-transparent h-full flex flex-col" : "absolute inset-0 p-8"}`}
+          className={`relative ${activeWindow === "about" ? "min-h-full bg-[#fafaff]" : activeWindow === "projects" ? "p-0 bg-white h-full flex flex-col" : activeWindow === "resume" || activeWindow === "certificates" || activeWindow === "contact" || activeWindow === "education" || activeWindow === "skills" ? "p-0 bg-white h-full flex flex-col" : activeWindow === "assistant" ? "p-0 bg-transparent h-full flex flex-col" : "absolute inset-0 p-8"}`}
         >
           {activeWindow === "about" && <About />}
+          {activeWindow === "certificates" && <Certificates />}
           {activeWindow === "projects" && (
             <Projects
               onClose={() => {
@@ -642,28 +631,36 @@ function DraggableWindow({
             />
           )}
           {activeWindow === "contact" && <Contact />}
-          {activeWindow === "resume" && <Resume focusSocial={focusSocial} />}
-          {activeWindow === "assistant" && <Assistant />}
+          {activeWindow === "resume" && <Resume editable={resumeEditable} />}
+          {activeWindow === "assistant" && <Assistant onVoiceModeChange={onVoiceModeChange} />}
         </div>
       </div>
     </motion.div>
   );
 }
 
-export function Hero() {
+const MOBILE_VIEWPORT = "(max-width: 767px), (pointer: coarse) and (max-width: 1023px)";
+
+function subscribeMobileViewport(callback: () => void) {
+  const media = window.matchMedia(MOBILE_VIEWPORT);
+  media.addEventListener("change", callback);
+  return () => media.removeEventListener("change", callback);
+}
+
+export function Hero({ initialWindow, resumeEditable = false }: { initialWindow?: string; resumeEditable?: boolean } = {}) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [activeWindow, setActiveWindow] = useState<string | null>(null);
+  const [activeWindow, setActiveWindow] = useState<string | null>(initialWindow || null);
   const [isMaximized, setIsMaximized] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
-  const [socialWindows, setSocialWindows] = useState<Record<string, { minimized: boolean; zIndex: number }>>({});
+  const [isVoiceMode, setIsVoiceMode] = useState(false);
+  const isMobile = useSyncExternalStore(subscribeMobileViewport, () => window.matchMedia(MOBILE_VIEWPORT).matches, () => false);
+  const hideDock = (activeWindow === "assistant" && isVoiceMode) || Boolean(activeWindow && (isMaximized || isMobile));
   const [focusedApp, setFocusedApp] = useState<string | null>(null);
   const [legacyZ, setLegacyZ] = useState(50);
   const topZ = useRef(50);
   const focusSocial = (id: string) => {
-    if (focusedApp === id && !socialWindows[id]?.minimized) return;
-    const zIndex = ++topZ.current;
-    setFocusedApp(id);
-    setSocialWindows((previous) => ({ ...previous, [id]: { minimized: false, zIndex } }));
+    const app = SOCIAL_APPS.find(app => app.id === id);
+    if (app) window.open(app.href, "_blank", "noopener,noreferrer");
   };
   const focusLegacy = () => {
     if (focusedApp === "legacy") return;
@@ -675,13 +672,15 @@ export function Hero() {
     setIsMounted(true);
     const storedWindow = sessionStorage.getItem("activeWindow");
     const storedMaximized = sessionStorage.getItem("isMaximized");
-    if (storedWindow) {
+    if (initialWindow) {
+      setActiveWindow(initialWindow);
+    } else if (storedWindow) {
       setActiveWindow(storedWindow);
     }
     if (storedMaximized === "true") {
       setIsMaximized(true);
     }
-  }, []);
+  }, [initialWindow]);
 
   useEffect(() => {
     if (!isMounted) return;
@@ -707,7 +706,7 @@ export function Hero() {
   return (
     <section
       ref={containerRef}
-      className="relative h-[100dvh] w-full overflow-hidden bg-black font-sans selection:bg-red-900 selection:text-white"
+      className="relative h-full w-full overflow-hidden overscroll-none bg-black font-sans selection:bg-red-900 selection:text-white"
     >
       {/* Halloween wallpaper; desktop folders and windows remain interactive. */}
       <div className="absolute inset-0 z-0 overflow-hidden">
@@ -716,25 +715,19 @@ export function Hero() {
           title="BHARAT SIRMAL"
           speed={0.5}
           controls={false}
-          className="h-full pl-24 pr-3 sm:px-24"
+          paused={Boolean(activeWindow)}
+          className="h-full px-3 md:px-24"
         />
       </div>
 
       {/* Floating macOS Folders */}
-      <div className="absolute inset-0 z-20 pointer-events-none">
+      <div className="desktop-icons absolute inset-0 z-20 pointer-events-none">
         {FOLDERS.map((folder) => (
           <DraggableFolder
             key={folder.id}
             folder={folder}
+            compact={isMobile}
             onClick={() => toggleWindow(folder.id, false)}
-          />
-        ))}
-        {SOCIAL_APPS.map((app) => (
-          <DraggableFolder
-            key={app.id}
-            folder={app}
-            running={Boolean(socialWindows[app.id])}
-            onClick={() => focusSocial(app.id)}
           />
         ))}
       </div>
@@ -743,62 +736,40 @@ export function Hero() {
       {activeWindow && (
         <div className="pointer-events-none absolute inset-0 [&>div]:pointer-events-auto" style={{ zIndex: legacyZ }} onPointerDownCapture={focusLegacy}>
         <DraggableWindow
+          key={activeWindow}
           activeWindow={activeWindow}
           isMaximized={isMaximized}
           setIsMaximized={setIsMaximized}
           setActiveWindow={setActiveWindow}
-          focusSocial={focusSocial}
+          onVoiceModeChange={setIsVoiceMode}
+          resumeEditable={resumeEditable}
+          mobile={isMobile}
         />
         </div>
       )}
 
-      <AnimatePresence>
-        {SOCIAL_APPS.filter((app) => socialWindows[app.id]).map((app) => (
-          <DesktopWindow
-            key={app.id}
-            title={app.label}
-            icon={app.image}
-            minimized={socialWindows[app.id].minimized}
-            zIndex={socialWindows[app.id].zIndex}
-            focused={focusedApp === app.id}
-            onFocus={() => focusSocial(app.id)}
-            onMinimize={() => {
-              setSocialWindows((previous) => ({ ...previous, [app.id]: { ...previous[app.id], minimized: true } }));
-              setFocusedApp(null);
-            }}
-            onClose={() => {
-              setSocialWindows((previous) => {
-                const next = { ...previous };
-                delete next[app.id];
-                return next;
-              });
-              setFocusedApp(null);
-            }}
-          >
-            {app.id === "linkedin" ? <LinkedInApp /> : <GitHubApp />}
-          </DesktopWindow>
-        ))}
-      </AnimatePresence>
+
 
       {/* Bottom Dock (macOS Format) */}
+      {!hideDock && (
       <motion.div
         initial={{ opacity: 0, y: 50 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
-        className="absolute bottom-8 left-1/2 -translate-x-1/2 z-[10000] rounded-[15px] px-2 sm:px-4 py-2 flex items-center gap-2 sm:gap-4 bg-black/30 border border-white/30 backdrop-blur-3xl shadow-[0_8px_32px_0_rgba(0,0,0,0.36)]"
+        className="desktop-dock absolute bottom-8 left-1/2 -translate-x-1/2 z-20 rounded-[15px] px-2 sm:px-4 py-2 flex items-center gap-2 sm:gap-4 bg-black/30 border border-white/30 backdrop-blur-xl shadow-[0_8px_32px_0_rgba(0,0,0,0.36)]"
       >
-        {/* Resume Icon */}
+        {/* LinkedIn Icon */}
         <div className="relative group flex items-center justify-center">
           <div className="absolute -top-12 px-3 py-1 bg-black/60 backdrop-blur-md text-white text-xs font-semibold rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow-lg border border-white/10 whitespace-nowrap">
-            Resume
+            LinkedIn
           </div>
           <div
             className="w-12 h-12 md:w-14 md:h-14 rounded-[22.5%] shadow-sm flex items-center justify-center border border-white/50 hover:scale-110 transition-transform cursor-pointer overflow-hidden"
-            onClick={() => toggleWindow("resume", false)}
+            onClick={() => focusSocial("linkedin")}
           >
-            <img
-              src="/resume.svg"
-              alt="Resume"
+            <Image
+              src="/linkedin.png" width={56} height={56} sizes="56px"
+              alt="LinkedIn"
               className="w-full h-full object-cover pointer-events-none"
               draggable={false}
             />
@@ -814,8 +785,8 @@ export function Hero() {
             className="w-12 h-12 md:w-14 md:h-14 rounded-[22.5%] shadow-sm flex items-center justify-center border border-white/50 hover:scale-110 transition-transform cursor-pointer overflow-hidden"
             onClick={() => toggleWindow("assistant", false)}
           >
-            <img
-              src="/jojo-ai-assistant-app.svg"
+            <Image
+              src="/jojo-ai-assistant-app.svg" width={56} height={56} sizes="56px"
               alt="Assistant"
               className="w-full h-full object-cover pointer-events-none"
               draggable={false}
@@ -828,31 +799,26 @@ export function Hero() {
 
 
 
-        {/* Contact Icon */}
+        {/* GitHub Icon */}
         <div className="relative group flex items-center justify-center">
           <div className="absolute -top-12 px-3 py-1 bg-black/60 backdrop-blur-md text-white text-xs font-semibold rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow-lg border border-white/10 whitespace-nowrap">
-            Contact
+            GitHub
           </div>
           <div
             className="w-12 h-12 md:w-14 md:h-14 rounded-[22.5%] shadow-sm flex items-center justify-center border border-white/50 hover:scale-110 transition-transform cursor-pointer overflow-hidden"
-            onClick={() => toggleWindow("contact", false)}
+            onClick={() => focusSocial("github")}
           >
-            <img
-              src="/contact_image.avif"
-              alt="Contact"
+            <Image
+              src="/github.png" width={56} height={56} sizes="56px"
+              alt="GitHub"
               className="w-full h-full object-cover pointer-events-none"
               draggable={false}
             />
           </div>
         </div>
-        {SOCIAL_APPS.filter((app) => socialWindows[app.id]).map((app) => (
-          <button key={app.id} type="button" aria-label={`Restore ${app.label} window`} onClick={() => focusSocial(app.id)} className="group relative h-12 w-12 shrink-0 rounded-[22.5%] border border-white/50 shadow-sm transition-transform hover:scale-110 focus-visible:outline-2 focus-visible:outline-white md:h-14 md:w-14">
-            <img src={app.image} alt="" className="h-full w-full rounded-[22.5%] object-cover" draggable={false} />
-            <span className="pointer-events-none absolute -top-10 left-1/2 -translate-x-1/2 rounded-md bg-black/80 px-2 py-1 text-xs text-white opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100">{app.label}</span>
-            <span aria-label={`${app.label} is running`} className="absolute -bottom-1.5 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-sky-300 shadow-[0_0_8px_#7dd3fc]" />
-          </button>
-        ))}
+
       </motion.div>
+      )}
     </section>
   );
 }

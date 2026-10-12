@@ -7,6 +7,7 @@ import { Maximize2, Minimize2, Minus, X } from "lucide-react";
 type Bounds = { x: number; y: number; width: number; height: number };
 type Props = {
   title: string; icon: string; minimized: boolean; zIndex: number; focused: boolean;
+  maximized: boolean; onMaximizedChange: (value: boolean) => void;
   onFocus: () => void; onMinimize: () => void; onClose: () => void; children: ReactNode;
 };
 
@@ -16,10 +17,9 @@ function viewportBounds(): Bounds {
   return { x: (window.innerWidth - width) / 2, y: 24, width, height: Math.max(200, height) };
 }
 
-export function DesktopWindow({ title, icon, minimized, zIndex, focused, onFocus, onMinimize, onClose, children }: Props) {
+export function DesktopWindow({ title, icon, minimized, zIndex, focused, maximized, onMaximizedChange: setMaximized, onFocus, onMinimize, onClose, children }: Props) {
   const [bounds, setBounds] = useState(viewportBounds);
   const [viewport, setViewport] = useState(() => ({ width: window.innerWidth, height: window.innerHeight }));
-  const [maximized, setMaximized] = useState(false);
   const [interacting, setInteracting] = useState(false);
   const reduced = useReducedMotion();
   const windowRef = useRef<HTMLDivElement>(null);
@@ -76,7 +76,7 @@ export function DesktopWindow({ title, icon, minimized, zIndex, focused, onFocus
       transition={{ duration: interacting || reduced ? 0 : 0.28, ease: [0.22, 1, 0.36, 1] }}
       exit={{ opacity: 0, scale: 0.92, transition: { duration: reduced ? 0 : 0.2 } }}
       style={{ zIndex, pointerEvents: minimized ? "none" : "auto" }}
-      className={`absolute left-0 top-0 flex flex-col overflow-hidden bg-white text-slate-900 outline-none ${effectiveMaximized ? "rounded-none" : "rounded-2xl"}`}
+      className={`absolute left-0 top-0 flex flex-col overflow-hidden bg-white text-slate-900 outline-none ${effectiveMaximized ? "rounded-none" : "rounded-[var(--portfolio-radius)]"}`}
     >
       <header onPointerDown={(event) => start(event, "drag")} onPointerMove={move} onPointerUp={end} onPointerCancel={end} onLostPointerCapture={end} onDoubleClick={(event) => { if (!(event.target as HTMLElement).closest(".window-control-btn")) setMaximized(!maximized); }} className={`group flex h-12 shrink-0 touch-none select-none items-center gap-2 border-b border-zinc-200/50 px-4 ${focused ? "bg-zinc-100/80 backdrop-blur-xl" : "bg-zinc-50/80 backdrop-blur-xl"} ${effectiveMaximized ? "" : "cursor-grab active:cursor-grabbing"}`}>
         <div className="flex items-center gap-2 shrink-0">

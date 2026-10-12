@@ -6,10 +6,12 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test:cloud": "node --test scripts/cloud-storage.test.mjs"
   },
   "dependencies": {
     "@fontsource/amarna": "^5.3.0",
+    "@supabase/supabase-js": "^2.117.3",
     "clsx": "^2.1.1",
     "framer-motion": "^12.38.0",
     "html2pdf.js": "^0.14.0",
