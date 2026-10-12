@@ -1,10 +1,9 @@
 "use client";
 
-import React, { useRef, useState } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Download, Pencil, Save, Plus, Trash2 } from "lucide-react";
 import { LetterReveal } from "./LetterReveal";
-import { useReactToPrint } from "react-to-print";
 import { saveLocalResume, useResumeContent } from "@/lib/local-resume";
 import { cloudEnabled } from "@/lib/supabase";
 import type { ResumeData, ResumeEntry } from "@/lib/resume-data";
@@ -25,12 +24,6 @@ export function Resume({ editable = false }: { editable?: boolean }) {
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const data = draft || savedResume;
-  const contentRef = useRef<HTMLDivElement>(null);
-  const handleDownloadPDF = useReactToPrint({
-    contentRef,
-    documentTitle: `${data.name.replace(/[^a-z0-9]+/gi, "_")}_Resume`,
-    pageStyle: "@page { size: auto; margin: 10mm; } @media print { html, body { font-family: 'Times New Roman', Times, serif; font-size: 14px !important; color: black !important; zoom: 0.9; } }",
-  });
   const update = (change: (current: ResumeData) => ResumeData) => {
     setDraft(current => change(current || savedResume));
     setNotice("");
@@ -48,7 +41,7 @@ export function Resume({ editable = false }: { editable?: boolean }) {
       await saveLocalResume(data);
       setDraft(null);
       setEditing(false);
-      setNotice(cloudEnabled ? "Resume published successfully. All visitors can see the updated content." : "Resume saved in this browser.");
+      setNotice(cloudEnabled ? "Resume published successfully. The download still uses your uploaded PDF." : "Resume saved in this browser. The download still uses your uploaded PDF.");
     } catch { setError("Could not save the resume. Check your connection and admin access. Your edits are kept so you can retry."); }
     finally { setSaving(false); }
   };
@@ -62,12 +55,12 @@ export function Resume({ editable = false }: { editable?: boolean }) {
         <div className="flex flex-wrap gap-2">
           {editable && <Link href="/admin" className="inline-flex min-h-9 items-center gap-2 rounded-[var(--portfolio-radius)] border border-blue-100 bg-white px-3 py-2 text-xs font-medium text-blue-600 hover:bg-blue-50"><ArrowLeft size={14} />Back to admin</Link>}
           {editable && (editing ? <><button type="button" onClick={save} disabled={saving} className="inline-flex items-center gap-2 rounded-[var(--portfolio-radius)] bg-blue-600 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-700"><Save size={14} />{saving ? "Saving…" : "Save changes"}</button><button type="button" onClick={() => { setDraft(null); setEditing(false); setError(""); setNotice(""); }} className="rounded-[var(--portfolio-radius)] border border-slate-200 px-3 py-2 text-xs text-slate-600">Cancel</button></> : <button type="button" onClick={() => { setEditing(true); setNotice(""); }} className="inline-flex items-center gap-2 rounded-[var(--portfolio-radius)] border border-slate-200 px-3 py-2 text-xs text-slate-600"><Pencil size={14} />Edit resume</button>)}
-          <button type="button" onClick={() => handleDownloadPDF()} disabled={editing} className="inline-flex items-center gap-2 rounded-[var(--portfolio-radius)] bg-gray-900 px-3 py-2 text-xs font-semibold text-white hover:bg-gray-800 disabled:opacity-40"><Download size={14} />Download Resume</button>
+          <a href={editing ? undefined : "/Bharat_Sirmal_Resume.pdf"} download="Bharat_Sirmal_Resume.pdf" aria-disabled={editing} tabIndex={editing ? -1 : undefined} onClick={event => { if (editing) event.preventDefault(); }} className={`inline-flex items-center gap-2 rounded-[var(--portfolio-radius)] bg-gray-900 px-3 py-2 text-xs font-semibold text-white hover:bg-gray-800 ${editing ? "pointer-events-none opacity-40" : ""}`}><Download size={14} />Download Resume</a>
         </div>
         {error && <p role="alert" className="w-full text-sm text-red-600">{error}</p>}
         {notice && <p role="status" className="w-full text-xs text-emerald-700">{notice}</p>}
       </div>
-      <div ref={contentRef} className="relative mx-auto flex max-w-4xl flex-col gap-6 bg-white p-6 pb-24 leading-relaxed md:p-12 lg:p-16 print:gap-3 print:p-0">
+      <div className="relative mx-auto flex max-w-4xl flex-col gap-6 bg-white p-6 pb-24 leading-relaxed md:p-12 lg:p-16 print:gap-3 print:p-0">
         <header className="mb-2 flex flex-col items-center justify-center print:mb-0">
           <h1 className="mb-3 w-full text-center text-3xl font-bold uppercase tracking-tight md:text-4xl print:text-2xl">{editing ? <EditField label="Name" value={data.name} onChange={name => update(current => ({ ...current, name }))} /> : <LetterReveal text={data.name} />}</h1>
           {editing ? <div className="grid w-full gap-3 font-sans sm:grid-cols-2">{([ ["email", "Email"], ["location", "Location"], ["linkedin", "LinkedIn URL"], ["github", "GitHub URL"], ["portfolio", "Portfolio URL"] ] as const).map(([key, label]) => <div key={key}><p className="mb-1 text-xs text-slate-500">{label}</p><EditField label={label} value={data[key]} onChange={value => update(current => ({ ...current, [key]: value }))} /></div>)}</div> : <div className="flex flex-wrap items-center justify-center gap-1.5 break-words text-center text-[14px] font-medium">
@@ -80,7 +73,7 @@ export function Resume({ editable = false }: { editable?: boolean }) {
         </header>
         {data.sections.map(section => <section key={section.id}>
           <h2 className="mb-3 border-b-2 border-black pb-1 text-lg font-bold uppercase print:mb-2">{editing ? <EditField label={`${section.title} section heading`} value={section.title} onChange={title => update(current => ({ ...current, sections: current.sections.map(item => item.id === section.id ? { ...item, title } : item) }))} /> : <LetterReveal text={section.title} />}</h2>
-          <div className={`flex flex-col text-[14px] ${section.id === "skills" ? "gap-1" : "gap-4"} print:gap-1`}>{section.entries.map(entry => <div key={entry.id} className={editing ? "rounded-[var(--portfolio-radius)] border border-slate-100 p-3" : ""}>
+          <div className={`flex flex-col text-[14px] ${section.id === "skills" ? "gap-1" : "gap-4"} print:gap-1`}>{section.entries.map(entry => !editing && section.id === "skills" ? <div key={entry.id} className="whitespace-pre-wrap break-words"><strong>{entry.title.replace(/:\s*$/, "")}:</strong>{" "}{[entry.subtitle, ...entry.details].filter(Boolean).join(" ")}{entry.date && <span className="ml-2 italic">{entry.date}</span>}</div> : <div key={entry.id} className={editing ? "rounded-[var(--portfolio-radius)] border border-slate-100 p-3" : ""}>
             <div className="flex flex-wrap items-start justify-between gap-2">
               {editing ? <EditField label={`${section.title} entry title`} value={entry.title} onChange={title => updateEntry(section.id, entry.id, item => ({ ...item, title }))} /> : entry.title && <strong>{entry.title}</strong>}
               {editing ? <EditField label={`${entry.title} dates`} value={entry.date} onChange={date => updateEntry(section.id, entry.id, item => ({ ...item, date }))} /> : entry.date && <span className="italic">{entry.date}</span>}

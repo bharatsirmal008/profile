@@ -7,6 +7,8 @@ A personal portfolio built as an interactive desktop with Next.js, React, TypeSc
 <<<<<<< HEAD
 **Shared uploads and admin access:** Supabase integration is included for projects, certificates, files, and resume content. Follow [the setup guide](docs/SUPABASE_SETUP.md), then visit `/admin` to import existing content. Cloud sharing requires a configured Supabase project; without it, public apps retain the existing local preview and management routes show setup instructions.
 
+**Resume download:** The Download Resume button serves `public/Bharat_Sirmal_Resume.pdf` directly to preserve the uploaded one-page document exactly. Editing the on-screen resume does not regenerate this PDF; replace that asset when updating the downloadable document.
+
 =======
 >>>>>>> 6499a2a9fe95b0bae4281d03c4f2afddb4113696
 This README documents the current source tree. The assistant backend is a separate service; its implementation is not included in this repository.

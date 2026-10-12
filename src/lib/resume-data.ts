@@ -34,7 +34,7 @@ export const defaultResume: ResumeData = {
       { id: "school", title: "Class 12 (Higher Secondary)", subtitle: "KMC Balkumari, Lalitpur Nepal", date: "2020 – 2022", details: ["GPA: 3.14 / 4.0"], bullets: false },
     ] },
     { id: "skills", title: "SKILLS", entries: [
-      { id: "languages", title: "Programming Languages", subtitle: "", date: "", details: ["Python, JavaScript, C++, SQL"], bullets: false },
+      { id: "languages", title: "Languages", subtitle: "", date: "", details: ["Python, C/C++, JavaScript, TypeScript, SQL"], bullets: false },
       { id: "databases", title: "Data & Databases", subtitle: "", date: "", details: ["MongoDB, MySQL, SQL querying"], bullets: false },
       { id: "tools", title: "Productivity & Tools", subtitle: "", date: "", details: ["Microsoft Excel, Google Sheets, Postman, GitHub, Cloudinary"], bullets: false },
       { id: "cloud", title: "Cloud & Platforms", subtitle: "", date: "", details: ["Google Cloud (Data Analytics), Firebase, Vercel"], bullets: false },
@@ -74,6 +74,11 @@ export function parseResume(snapshot: string | null): ResumeData {
     const data = value as ResumeData;
     if (![data.name, data.email, data.linkedin, data.github, data.portfolio, data.location].every(item => typeof item === "string") || !Array.isArray(data.sections)) return defaultResume;
     if (!data.sections.every(section => section && typeof section.id === "string" && typeof section.title === "string" && Array.isArray(section.entries) && section.entries.every(entry => entry && [entry.id, entry.title, entry.subtitle, entry.date].every(item => typeof item === "string") && typeof entry.bullets === "boolean" && Array.isArray(entry.details) && entry.details.every(detail => typeof detail === "string")))) return defaultResume;
-    return data;
+    // Upgrade the original skills row in existing browser/cloud resumes, keeping custom edits.
+    return { ...data, sections: data.sections.map(section => section.id === "skills" ? {
+      ...section, entries: section.entries.map(entry => entry.title === "Programming Languages" ? {
+        ...entry, title: "Languages", details: entry.details.map(detail => detail === "Python, JavaScript, C++, SQL" ? "Python, C/C++, JavaScript, TypeScript, SQL" : detail),
+      } : entry),
+    } : section) };
   } catch { return defaultResume; }
 }
