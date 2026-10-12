@@ -19,6 +19,7 @@ function safeLink(value: string) {
 export function Resume({ editable = false }: { editable?: boolean }) {
   const { resume: savedResume, loading, error: loadError } = useResumeContent();
   const [saving, setSaving] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const [draft, setDraft] = useState<ResumeData | null>(null);
   const [editing, setEditing] = useState(editable);
   const [notice, setNotice] = useState("");
@@ -41,9 +42,22 @@ export function Resume({ editable = false }: { editable?: boolean }) {
       await saveLocalResume(data);
       setDraft(null);
       setEditing(false);
-      setNotice(cloudEnabled ? "Resume published successfully. The download still uses your uploaded PDF." : "Resume saved in this browser. The download still uses your uploaded PDF.");
+      setNotice(cloudEnabled ? "Resume published successfully. Downloads include your saved changes." : "Resume saved in this browser. Downloads include your saved changes.");
     } catch { setError("Could not save the resume. Check your connection and admin access. Your edits are kept so you can retry."); }
     finally { setSaving(false); }
+  };
+
+  const download = async () => {
+    if (editing || downloading) return;
+    setDownloading(true);
+    setError("");
+    try {
+      const { createResumePdf } = await import("@/lib/resume-pdf");
+      const pdf = await createResumePdf(savedResume);
+      pdf.save("Bharat_Sirmal_Resume.pdf");
+    } catch {
+      setError("Could not generate the resume PDF. Please try again.");
+    } finally { setDownloading(false); }
   };
 
   if (loading || loadError) return <div className="p-6 text-sm text-slate-600" role={loadError ? "alert" : "status"}>{loadError || "Loading resume…"}</div>;
@@ -55,7 +69,7 @@ export function Resume({ editable = false }: { editable?: boolean }) {
         <div className="flex flex-wrap gap-2">
           {editable && <Link href="/admin" className="inline-flex min-h-9 items-center gap-2 rounded-[var(--portfolio-radius)] border border-blue-100 bg-white px-3 py-2 text-xs font-medium text-blue-600 hover:bg-blue-50"><ArrowLeft size={14} />Back to admin</Link>}
           {editable && (editing ? <><button type="button" onClick={save} disabled={saving} className="inline-flex items-center gap-2 rounded-[var(--portfolio-radius)] bg-blue-600 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-700"><Save size={14} />{saving ? "Saving…" : "Save changes"}</button><button type="button" onClick={() => { setDraft(null); setEditing(false); setError(""); setNotice(""); }} className="rounded-[var(--portfolio-radius)] border border-slate-200 px-3 py-2 text-xs text-slate-600">Cancel</button></> : <button type="button" onClick={() => { setEditing(true); setNotice(""); }} className="inline-flex items-center gap-2 rounded-[var(--portfolio-radius)] border border-slate-200 px-3 py-2 text-xs text-slate-600"><Pencil size={14} />Edit resume</button>)}
-          <a href={editing ? undefined : "/Bharat_Sirmal_Resume.pdf"} download="Bharat_Sirmal_Resume.pdf" aria-disabled={editing} tabIndex={editing ? -1 : undefined} onClick={event => { if (editing) event.preventDefault(); }} className={`inline-flex items-center gap-2 rounded-[var(--portfolio-radius)] bg-gray-900 px-3 py-2 text-xs font-semibold text-white hover:bg-gray-800 ${editing ? "pointer-events-none opacity-40" : ""}`}><Download size={14} />Download Resume</a>
+          <button type="button" onClick={download} disabled={editing || downloading} className="inline-flex items-center gap-2 rounded-[var(--portfolio-radius)] bg-gray-900 px-3 py-2 text-xs font-semibold text-white hover:bg-gray-800 disabled:opacity-40"><Download size={14} />{downloading ? "Preparing PDF…" : "Download Resume"}</button>
         </div>
         {error && <p role="alert" className="w-full text-sm text-red-600">{error}</p>}
         {notice && <p role="status" className="w-full text-xs text-emerald-700">{notice}</p>}
