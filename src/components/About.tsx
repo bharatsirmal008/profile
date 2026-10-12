@@ -39,7 +39,7 @@ export function About() {
         <div className="grid items-center gap-8 @[700px]:grid-cols-[0.92fr_1.15fr] @[700px]:gap-12">
           <motion.div initial={reducedMotion ? false : { opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="relative mx-auto w-full max-w-[340px] px-9 py-4">
             <div className="relative isolate aspect-square overflow-hidden rounded-[var(--portfolio-radius)] bg-[linear-gradient(135deg,#8470ff_0%,#5963d5_48%,#793bea_100%)] shadow-[0_12px_32px_rgba(102,67,220,0.22)] ring-1 ring-white/70">
-              <Image src="/profile-cutout.png" alt="Bharat Sirmal" fill sizes="(max-width: 700px) 268px, 300px" className="object-cover object-bottom" />
+              <Image src="/profile_image.png" alt="Bharat Sirmal" fill sizes="(max-width: 700px) 268px, 300px" className="object-cover object-center" />
               <div aria-hidden="true" className="pointer-events-none absolute inset-0 rounded-[var(--portfolio-radius)] ring-1 ring-inset ring-white/20" />
             </div>
             <svg aria-hidden="true" viewBox="0 0 340 300" className="pointer-events-none absolute inset-0 h-full w-full overflow-visible" fill="none">

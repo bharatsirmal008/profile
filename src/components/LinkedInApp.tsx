@@ -17,7 +17,7 @@ export function LinkedInApp() {
     <div className="min-h-full bg-[#f3f2ef] pb-8">
       <div className="h-28 bg-gradient-to-r from-[#0a66c2] via-[#164b77] to-[#102c43] px-6 pt-5 text-right text-xs font-medium tracking-[0.2em] text-white/70">BUILD. LEARN. CREATE.</div>
       <div className="relative border-b border-slate-200 bg-white px-5 pb-6 sm:px-8">
-        <img src="/profile_image.jpeg" alt="Bharat Sirmal" className="relative -top-12 -mb-9 h-28 w-28 rounded-full border-4 border-white object-cover" />
+        <img src="/profile_image.png" alt="Bharat Sirmal" className="relative -top-12 -mb-9 h-28 w-28 rounded-full border-4 border-white object-cover" />
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div><h2 className="text-2xl font-bold">Bharat Sirmal</h2><p className="mt-1 max-w-xl text-sm">Computer Science Student · Web Development · Data & Databases</p><p className="mt-2 text-xs text-slate-500">Mumbai, Maharashtra, India</p></div>
           <a href="https://www.linkedin.com/in/bharat-sirmal/" target="_blank" rel="noopener noreferrer" className="rounded-full bg-[#0a66c2] px-4 py-2 text-sm font-semibold text-white hover:bg-[#004182] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">View Official LinkedIn ↗</a>
