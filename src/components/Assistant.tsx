@@ -2,9 +2,11 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
+import { StreamingSpeech, readAnswerStream } from "../lib/voice-stream";
 
 import {
   Send,
+  Square,
   ThumbsUp,
   ThumbsDown,
   Bot,
@@ -62,6 +64,12 @@ type Conversation = {
    SPEECH RECOGNITION TYPE
 ============================================================ */
 
+type RecognitionResultEvent = {
+  resultIndex: number;
+  results: ArrayLike<{ isFinal: boolean; [index: number]: { transcript: string } }>;
+};
+type RecognitionErrorEvent = { error: string };
+
 type SpeechRecognitionInstance = {
   continuous: boolean;
   interimResults: boolean;
@@ -73,9 +81,19 @@ type SpeechRecognitionInstance = {
 
   onstart: (() => void) | null;
   onend: (() => void) | null;
-  onerror: ((event: any) => void) | null;
-  onresult: ((event: any) => void) | null;
+  onerror: ((event: RecognitionErrorEvent) => void) | null;
+  onresult: ((event: RecognitionResultEvent) => void) | null;
 };
+
+const defaultMessages: Message[] = [
+  {
+    id: "1",
+    role: "ai",
+    content:
+      "Hey! 👋\nI'm Jojo — Bharat's personal AI assistant.\nHow can I help you today?",
+    timestamp: "",
+  },
+];
 
 export function Assistant({ onVoiceModeChange }: { onVoiceModeChange?: (active: boolean) => void } = {}) {
   const reducedMotion = useReducedMotion();
@@ -86,15 +104,7 @@ export function Assistant({ onVoiceModeChange }: { onVoiceModeChange?: (active: 
      MESSAGES
   ========================================================== */
 
-  const defaultMessages: Message[] = [
-    {
-      id: "1",
-      role: "ai",
-      content:
-        "Hey! 👋\nI'm Jojo — Bharat's personal AI assistant.\nHow can I help you today?",
-      timestamp: "",
-    },
-  ];
+
 
   const [messages, setMessages] = useState<Message[]>(defaultMessages);
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -155,15 +165,18 @@ export function Assistant({ onVoiceModeChange }: { onVoiceModeChange?: (active: 
   }, [messages, activeConversationId, dataLoaded]);
 
   useEffect(() => {
-    if (dataLoaded) {
-      localStorage.setItem(
-        "assistantConversations",
-        JSON.stringify(conversations),
-      );
-    }
+    if (!dataLoaded) return;
+    const save = () => {
+      try { localStorage.setItem("assistantConversations", JSON.stringify(conversations)); }
+      catch (error) { console.warn("Unable to save chat history:", error); }
+    };
+    const timer = setTimeout(save, 300);
+    window.addEventListener("pagehide", save);
+    return () => { clearTimeout(timer); window.removeEventListener("pagehide", save); };
   }, [conversations, dataLoaded]);
 
   const startNewChat = () => {
+    cancelCurrentResponse();
     followMessagesRef.current = true;
     setActiveConversationId(Date.now().toString());
     setMessages(defaultMessages.map(message => ({ ...message, timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) })));
@@ -171,6 +184,7 @@ export function Assistant({ onVoiceModeChange }: { onVoiceModeChange?: (active: 
   };
 
   const loadConversation = (id: string) => {
+    cancelCurrentResponse();
     followMessagesRef.current = true;
     const conv = conversations.find((c) => c.id === id);
     if (conv) {
@@ -185,6 +199,7 @@ export function Assistant({ onVoiceModeChange }: { onVoiceModeChange?: (active: 
 
   const deleteConversation = (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
+    if (activeConversationId === id) cancelCurrentResponse();
     setConversations((prev) => {
       const filtered = prev.filter((c) => c.id !== id);
       if (activeConversationId === id) {
@@ -220,6 +235,7 @@ export function Assistant({ onVoiceModeChange }: { onVoiceModeChange?: (active: 
   const [inputValue, setInputValue] = useState("");
 
   const [isLoading, setIsLoading] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   /* ==========================================================
      NORMAL MICROPHONE
@@ -239,7 +255,13 @@ export function Assistant({ onVoiceModeChange }: { onVoiceModeChange?: (active: 
      SELECTED VOICE
   ========================================================== */
 
-  const utterancesQueueRef = useRef<SpeechSynthesisUtterance[]>([]);
+  const speechRef = useRef<StreamingSpeech | null>(null);
+  const requestAbortRef = useRef<AbortController | null>(null);
+  const requestActiveRef = useRef(false);
+  const resumeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const sendMessageRef = useRef<(text: string, voice?: boolean, conversation?: boolean) => void>(() => {});
+  const activeConversationRef = useRef(activeConversationId);
+  useEffect(() => { activeConversationRef.current = activeConversationId; }, [activeConversationId]);
 
   /* ==========================================================
      VOICE CONVERSATION MODE
@@ -297,619 +319,156 @@ export function Assistant({ onVoiceModeChange }: { onVoiceModeChange?: (active: 
      SPEAK RESPONSE
   ========================================================== */
 
-  const speakResponse = (text: string, continueConversation = false) => {
-    if (typeof window === "undefined" || !("speechSynthesis" in window)) {
-      return;
-    }
-
-    window.speechSynthesis.cancel();
-
-    const cleanText = text
-      .replace(/[\\*#_`]/g, "")
-      .replace(/\n+/g, " ")
-      .trim();
-
-    if (!cleanText) {
-      if (continueConversation) {
+  const resumeConversation = () => {
+    if (resumeTimerRef.current) clearTimeout(resumeTimerRef.current);
+    resumeTimerRef.current = setTimeout(() => {
+      resumeTimerRef.current = null;
+      if (conversationModeRef.current && !requestActiveRef.current && !window.speechSynthesis?.speaking) {
+        conversationBusyRef.current = false;
         startConversationListening();
       }
-
-      return;
-    }
-
-    /* ========================================================
-       CHOOSE MALE VOICE
-    ======================================================== */
-
-    const chooseMaleVoice = (
-      voices: SpeechSynthesisVoice[],
-    ): SpeechSynthesisVoice | null => {
-      const maleHints = [
-        "male",
-        "david",
-        "mark",
-        "guy",
-        "ravi",
-        "prabhat",
-        "daniel",
-        "aaron",
-        "fred",
-        "alex",
-        "microsoft david",
-        "google uk english male",
-        "google us english male",
-        "english male",
-      ];
-
-      const femaleHints = [
-        "female",
-        "zira",
-        "samantha",
-        "karen",
-        "susan",
-        "heera",
-        "priya",
-        "neerja",
-        "google uk english female",
-        "google us english female",
-        "english female",
-      ];
-
-      const isMale = (voice: SpeechSynthesisVoice) => {
-        const name = voice.name.toLowerCase();
-
-        return maleHints.some((hint) => name.includes(hint));
-      };
-
-      const isFemale = (voice: SpeechSynthesisVoice) => {
-        const name = voice.name.toLowerCase();
-
-        return femaleHints.some((hint) => name.includes(hint));
-      };
-
-      const isAsianMale = (voice: SpeechSynthesisVoice) => {
-        const lang = voice.lang.toLowerCase();
-        const name = voice.name.toLowerCase();
-
-        // Match Asian language codes or specific Asian male voice names
-        const isAsianLang =
-          lang.includes("en-in") ||
-          lang.includes("en-sg") ||
-          lang.includes("en-ph") ||
-          lang.includes("en-hk") ||
-          lang.includes("zh") ||
-          lang.includes("ko") ||
-          lang.includes("ja");
-        const asianNames = [
-          "ravi",
-          "prabhat",
-          "rishi",
-          "zhiwei",
-          "kazuha",
-          "keita",
-          "tian",
-          "yunjian",
-        ];
-
-        const hasAsianName = asianNames.some((hint) => name.includes(hint));
-
-        // MUST be explicitly male (either by male name, or has 'male' in the voice profile)
-        return (
-          (isAsianLang && isMale(voice)) || (hasAsianName && !isFemale(voice))
-        );
-      };
-
-      const youngMaleHints = [
-        "google uk english male",
-        "google us english",
-        "mark",
-        "aaron",
-        "alex",
-        "daniel",
-        "guy",
-      ];
-
-      const isYoungMale = (voice: SpeechSynthesisVoice) => {
-        const name = voice.name.toLowerCase();
-        return youngMaleHints.some((hint) => name.includes(hint));
-      };
-
-      // 1. Try to find an Asian/Indian male voice specifically
-      const asianMale = voices.find((voice) => isAsianMale(voice));
-      if (asianMale) return asianMale;
-
-      // 2. Try to find a young western male voice
-      const youngMale = voices.find((voice) => isYoungMale(voice));
-      if (youngMale) return youngMale;
-
-      const indianEnglish = voices.find(
-        (voice) =>
-          voice.lang.toLowerCase().includes("en-in") && !isFemale(voice),
-      );
-
-      if (indianEnglish) {
-        return indianEnglish;
-      }
-
-      const englishMale = voices.find(
-        (voice) =>
-          voice.lang.toLowerCase().startsWith("en") &&
-          isMale(voice) &&
-          !isFemale(voice),
-      );
-
-      if (englishMale) {
-        return englishMale;
-      }
-
-      const englishVoice = voices.find(
-        (voice) =>
-          voice.lang.toLowerCase().startsWith("en") && !isFemale(voice),
-      );
-
-      if (englishVoice) {
-        return englishVoice;
-      }
-
-      return voices[0] || null;
-    };
-
-    const speak = () => {
-      const voices = window.speechSynthesis.getVoices();
-
-      if (!voices.length) {
-        return;
-      }
-
-      const selectedVoice = chooseMaleVoice(voices);
-
-      if (selectedVoice) {
-        console.log(
-          "Bharat AI selected voice:",
-          selectedVoice.name,
-          selectedVoice.lang,
-        );
-      }
-
-      const sentences = cleanText.match(/[^.!?]+[.!?]*/g) || [cleanText];
-
-      utterancesQueueRef.current = [];
-
-      sentences.forEach((sentence, index) => {
-        const textChunk = sentence.trim();
-        if (!textChunk) return;
-
-        const utterance = new SpeechSynthesisUtterance(textChunk);
-        utterancesQueueRef.current.push(utterance);
-
-        if (selectedVoice) {
-          utterance.voice = selectedVoice;
-          utterance.lang = selectedVoice.lang;
-        } else {
-          utterance.lang = "en-IN";
-        }
-
-        utterance.rate = 1.15; // Faster, more energetic
-        utterance.pitch = 1.25; // Higher pitch for a younger boy
-        utterance.volume = 1;
-        utterance.onboundary = () => { speechPulse.current = performance.now(); };
-
-        if (index === 0) {
-          utterance.onstart = () => {
-            speechPulse.current = performance.now();
-            setIsSpeaking(true);
-          };
-        }
-
-        if (index === sentences.length - 1) {
-          utterance.onend = () => {
-            setIsSpeaking(false);
-
-            if (continueConversation && conversationModeRef.current) {
-              setTimeout(() => {
-                startConversationListening();
-              }, 350);
-            }
-          };
-
-          utterance.onerror = (event) => {
-            console.error("Speech synthesis error:", event);
-
-            setIsSpeaking(false);
-
-            if (continueConversation && conversationModeRef.current) {
-              setTimeout(() => {
-                startConversationListening();
-              }, 350);
-            }
-          };
-        } else {
-          utterance.onerror = (event) => {
-            console.error("Speech synthesis error on chunk:", event);
-          };
-        }
-
-        window.speechSynthesis.speak(utterance);
-      });
-    };
-
-    const voices = window.speechSynthesis.getVoices();
-
-    if (voices.length > 0) {
-      speak();
-    } else {
-      window.speechSynthesis.onvoiceschanged = () => {
-        speak();
-
-        window.speechSynthesis.onvoiceschanged = null;
-      };
-    }
+    }, 100);
   };
 
-  /* ==========================================================
-     STOP SPEAKING
-  ========================================================== */
+  const createSpeech = (conversation: boolean, started = performance.now()) => {
+    if (!("speechSynthesis" in window)) {
+      if (conversation) resumeConversation();
+      return null;
+    }
+    const speech = new StreamingSpeech({
+      synth: window.speechSynthesis,
+      createUtterance: text => new SpeechSynthesisUtterance(text),
+      onSpeaking: setIsSpeaking,
+      onPulse: () => { speechPulse.current = performance.now(); },
+      onFirstAudio: () => console.debug("Bharat AI first audio (ms)", Math.round(performance.now() - started)),
+      onDone: () => { if (conversation) resumeConversation(); },
+      onError: error => {
+        console.warn("Voice playback unavailable:", error);
+        // Keep text available and let the user restart voice after a permission/device error.
+        conversationModeRef.current = false;
+        conversationBusyRef.current = false;
+        setIsConversationMode(false);
+      },
+    });
+    speechRef.current = speech;
+    return speech;
+  };
 
   const stopSpeaking = () => {
-    if (typeof window !== "undefined" && "speechSynthesis" in window) {
-      window.speechSynthesis.cancel();
-
-      setIsSpeaking(false);
-    }
+    speechRef.current?.cancel();
+    speechRef.current = null;
+    if (resumeTimerRef.current) clearTimeout(resumeTimerRef.current);
+    resumeTimerRef.current = null;
+    setIsSpeaking(false);
   };
 
-  /* ==========================================================
-     STREAM RESPONSE PARSER
-  ========================================================== */
-
-  const parseStreamChunk = (chunk: string): string => {
-    if (!chunk) {
-      return "";
-    }
-
-    /*
-     * Supports:
-     *
-     * 1. Raw text streaming
-     * 2. SSE:
-     *    data: hello
-     * 3. JSON:
-     *    {"token":"hello"}
-     * 4. JSON:
-     *    {"text":"hello"}
-     * 5. JSON:
-     *    {"answer":"hello"}
-     */
-
-    let result = "";
-
-    const lines = chunk.split("\n");
-
-    for (const line of lines) {
-      const trimmed = line.trim();
-
-      if (!trimmed) {
-        continue;
-      }
-
-      if (trimmed === "data: [DONE]") {
-        continue;
-      }
-
-      let value = trimmed;
-
-      if (value.startsWith("data:")) {
-        value = value.substring(5).trim();
-      }
-
-      try {
-        const parsed = JSON.parse(value);
-
-        if (typeof parsed === "string") {
-          result += parsed;
-        } else if (typeof parsed.token === "string") {
-          result += parsed.token;
-        } else if (typeof parsed.text === "string") {
-          result += parsed.text;
-        } else if (typeof parsed.answer === "string") {
-          result += parsed.answer;
-        }
-      } catch {
-        result += value;
-      }
-    }
-
-    return result;
+  const cancelCurrentResponse = () => {
+    requestAbortRef.current?.abort();
+    requestAbortRef.current = null;
+    requestActiveRef.current = false;
+    setIsGenerating(false);
+    conversationBusyRef.current = false;
+    setIsLoading(false);
+    stopSpeaking();
   };
 
-  /* ==========================================================
-     SEND MESSAGE — STREAMING
-  ========================================================== */
+  const speakResponse = (text: string, continueConversation = false) => {
+    stopSpeaking();
+    const speech = createSpeech(continueConversation);
+    speech?.append(text);
+    speech?.finish();
+  };
 
-  const sendMessage = async (
-    messageText: string,
-    fromVoice = false,
-    conversation = false,
-  ) => {
+  const sendMessage = async (messageText: string, fromVoice = false, conversation = false) => {
     const text = messageText.trim();
-
-    if (!text || isLoading || conversationBusyRef.current) {
-      return;
-    }
+    if (!text || requestActiveRef.current || conversationBusyRef.current) return;
+    stopSpeaking();
+    try { recognitionRef.current?.stop(); } catch {}
+    requestActiveRef.current = true;
+    setIsGenerating(true);
+    conversationBusyRef.current = conversation;
+    const controller = new AbortController();
+    requestAbortRef.current = controller;
+    const started = performance.now();
+    const id = crypto.randomUUID();
+    const aiMessageId = `${id}_ai`;
+    const timestamp = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
     followMessagesRef.current = true;
-
-    if (conversation) {
-      conversationBusyRef.current = true;
-    }
-
-    const userMessageId = Date.now().toString();
-
-    const aiMessageId = `${Date.now()}_ai`;
-
-    const timestamp = new Date().toLocaleTimeString([], {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-
-    /* ========================================================
-       USER MESSAGE
-    ======================================================== */
-
-    const newUserMsg: Message = {
-      id: userMessageId,
-      role: "user",
-      content: text,
-      timestamp,
-    };
-
-    setMessages((prev) => [...prev, newUserMsg]);
-
+    setMessages(prev => [...prev, { id, role: "user", content: text, timestamp }]);
     setInputValue("");
-
     setIsLoading(true);
-
-    /* ========================================================
-       STREAM STATE
-    ======================================================== */
-
+    const speech = fromVoice || conversation ? createSpeech(conversation, started) : null;
     let fullAnswer = "";
-
-    let aiMessageCreated = false;
-
+    let published = false;
+    let renderTimer: ReturnType<typeof setTimeout> | null = null;
+    const publish = () => {
+      renderTimer = null;
+      if (controller.signal.aborted || !fullAnswer) return;
+      const content = fullAnswer;
+      if (!published) {
+        published = true;
+        setIsLoading(false);
+        setMessages(prev => [...prev, { id: aiMessageId, role: "ai", content, timestamp }]);
+      } else {
+        setMessages(prev => prev.map(m => m.id === aiMessageId ? { ...m, content } : m));
+      }
+    };
     try {
-      console.log("Sending streaming request...");
-
-      /* ======================================================
-         BACKEND
-      ====================================================== */
-
       const response = await fetch(ASK_ENDPOINT, {
         method: "POST",
-
-        headers: {
-          "Content-Type": "application/json",
-
-          Accept: "text/event-stream",
-        },
-
+        signal: controller.signal,
+        headers: { "Content-Type": "application/json", Accept: "application/x-ndjson" },
         body: JSON.stringify({
           question: text,
-
-          voice: fromVoice,
-
-          session_id: sessionIdRef.current || "default",
+          voice: fromVoice || conversation,
+          session_id: `${sessionIdRef.current || "session"}:${activeConversationRef.current || "chat"}`,
         }),
       });
-
-      if (!response.ok) {
-        let errorDetails = "";
-
-        try {
-          errorDetails = await response.text();
-        } catch {
-          // Ignore secondary read errors.
-        }
-
-        throw new Error(
-          `Backend error: ${response.status} ${response.statusText}${
-            errorDetails ? ` - ${errorDetails}` : ""
-          }`,
-        );
-      }
-
-      /* ======================================================
-         STREAM CHECK
-      ====================================================== */
-
-      if (!response.body) {
-        throw new Error("Streaming is not supported by this response.");
-      }
-
-      const reader = response.body.getReader();
-
-      const decoder = new TextDecoder("utf-8");
-
-      /* ======================================================
-         READ STREAM
-      ====================================================== */
-
-      let buffer = "";
-
-      while (true) {
-        const { done, value } = await reader.read();
-
-        if (done) {
-          break;
-        }
-
-        const chunk = decoder.decode(value, {
-          stream: true,
-        });
-
-        buffer += chunk;
-
-        const lines = buffer.split("\n");
-        buffer = lines.pop() || "";
-
-        for (const line of lines) {
-          const token = parseStreamChunk(line + "\n");
-
-          if (!token) {
-            continue;
-          }
-
-          fullAnswer += token;
-
-          /* ====================================================
-           CREATE AI MESSAGE ON FIRST TOKEN
-        ==================================================== */
-
-          if (!aiMessageCreated && fullAnswer) {
-            aiMessageCreated = true;
-
-            setIsLoading(false);
-
-            const firstAiMessage: Message = {
-              id: aiMessageId,
-              role: "ai",
-              content: fullAnswer,
-              timestamp: new Date().toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
-              }),
-            };
-
-            setMessages((prev) => [...prev, firstAiMessage]);
-          } else if (aiMessageCreated) {
-            /* ==================================================
-             UPDATE EXISTING AI MESSAGE
-          ================================================== */
-
-            setMessages((prev) =>
-              prev.map((message) =>
-                message.id === aiMessageId
-                  ? {
-                      ...message,
-                      content: fullAnswer,
-                    }
-                  : message,
-              ),
-            );
-          }
-        }
-      }
-
-      /* ======================================================
-         FLUSH DECODER
-      ====================================================== */
-
-      const remaining = decoder.decode();
-      const finalBuffer = buffer + remaining;
-
-      if (finalBuffer) {
-        const token = parseStreamChunk(finalBuffer);
-
-        if (token) {
-          fullAnswer += token;
-
-          if (!aiMessageCreated) {
-            aiMessageCreated = true;
-
-            setIsLoading(false);
-
-            setMessages((prev) => [
-              ...prev,
-              {
-                id: aiMessageId,
-                role: "ai",
-                content: fullAnswer,
-                timestamp: new Date().toLocaleTimeString([], {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                }),
-              },
-            ]);
-          } else {
-            setMessages((prev) =>
-              prev.map((message) =>
-                message.id === aiMessageId
-                  ? {
-                      ...message,
-                      content: fullAnswer,
-                    }
-                  : message,
-              ),
-            );
-          }
-        }
-      }
-
-      /* ======================================================
-         EMPTY RESPONSE
-      ====================================================== */
-
-      if (!fullAnswer.trim()) {
-        throw new Error("AI returned an empty response.");
-      }
-
-      /* ======================================================
-         STREAM COMPLETE
-      ====================================================== */
-
-      console.log("Streaming completed.");
-
-      console.log("Final answer:", fullAnswer);
-
-      /* ======================================================
-         VOICE AFTER STREAM
-      ====================================================== */
-
-      if (fromVoice || conversation) {
-        setTimeout(() => {
-          speakResponse(fullAnswer, conversation);
-        }, 100);
-      }
+      if (!response.ok) throw new Error(`Backend error: ${response.status}`);
+      if (!response.body) throw new Error("Streaming is unavailable.");
+      await readAnswerStream(response.body, token => {
+        if (controller.signal.aborted) return;
+        if (!fullAnswer) console.debug("Bharat AI first text (ms)", Math.round(performance.now() - started));
+        fullAnswer += token;
+        speech?.append(token);
+        if (!published) publish();
+        else if (!renderTimer) renderTimer = setTimeout(publish, 40);
+      }, metrics => console.debug("Bharat AI server timing", metrics));
+      if (!fullAnswer.trim()) throw new Error("AI returned an empty response.");
+      if (renderTimer) clearTimeout(renderTimer);
+      publish();
+      speech?.finish();
     } catch (error) {
+      if (controller.signal.aborted) return;
       console.error("Bharat AI streaming error:", error);
-
-      /* ======================================================
-         REMOVE PARTIAL AI MESSAGE
-      ====================================================== */
-
-      if (aiMessageCreated) {
-        setMessages((prev) =>
-          prev.filter((message) => message.id !== aiMessageId),
-        );
-      }
-
-      const errorMsg: Message = {
-        id: `${Date.now()}_error`,
-        role: "ai",
-        content:
-          "I'm having trouble connecting to my AI server right now. Please make sure the Bharat AI backend is running.",
-        timestamp: new Date().toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-      };
-
-      setMessages((prev) => [...prev, errorMsg]);
-
+      speech?.cancel();
+      if (renderTimer) clearTimeout(renderTimer);
+      publish(); // Preserve useful partial text if the connection drops.
+      setMessages(prev => [...prev, {
+        id: `${id}_error`, role: "ai", timestamp,
+        content: fullAnswer
+          ? "The response was interrupted. Please try again."
+          : "I'm having trouble connecting to my AI server. Please try again.",
+      }]);
+      // Avoid an automatic microphone retry loop after a server failure.
       if (conversation) {
-        setTimeout(() => {
-          if (conversationModeRef.current) {
-            startConversationListening();
-          }
-        }, 1000);
+        conversationModeRef.current = false;
+        setIsConversationMode(false);
       }
     } finally {
-      setIsLoading(false);
-
-      if (conversation) {
+      if (renderTimer) clearTimeout(renderTimer);
+      if (requestAbortRef.current === controller) {
+        requestAbortRef.current = null;
+        requestActiveRef.current = false;
+        setIsGenerating(false);
         conversationBusyRef.current = false;
+        setIsLoading(false);
+        if (conversation && !speech) resumeConversation();
       }
     }
   };
+
+  useEffect(() => { sendMessageRef.current = sendMessage; });
 
   /* ==========================================================
      SPEECH RECOGNITION
@@ -920,9 +479,11 @@ export function Assistant({ onVoiceModeChange }: { onVoiceModeChange?: (active: 
       return;
     }
 
-    const SpeechRecognition =
-      (window as any).SpeechRecognition ||
-      (window as any).webkitSpeechRecognition;
+    const browser = window as typeof window & {
+      SpeechRecognition?: new () => SpeechRecognitionInstance;
+      webkitSpeechRecognition?: new () => SpeechRecognitionInstance;
+    };
+    const SpeechRecognition = browser.SpeechRecognition || browser.webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
       console.warn("Speech Recognition is not supported.");
@@ -944,7 +505,7 @@ export function Assistant({ onVoiceModeChange }: { onVoiceModeChange?: (active: 
        RESULT
     ======================================================== */
 
-    recognition.onresult = (event: any) => {
+    recognition.onresult = (event: RecognitionResultEvent) => {
       let finalTranscript = "";
 
       let interimTranscript = "";
@@ -970,9 +531,7 @@ export function Assistant({ onVoiceModeChange }: { onVoiceModeChange?: (active: 
       if (finalTranscript.trim() && !conversationModeRef.current) {
         voiceInputRef.current = true;
 
-        setTimeout(() => {
-          sendMessage(finalTranscript.trim(), true, false);
-        }, 250);
+        sendMessageRef.current(finalTranscript.trim(), true, false);
       }
 
       /* ==================================================
@@ -982,7 +541,7 @@ export function Assistant({ onVoiceModeChange }: { onVoiceModeChange?: (active: 
       if (finalTranscript.trim() && conversationModeRef.current) {
         setInputValue("");
 
-        sendMessage(finalTranscript.trim(), true, true);
+        sendMessageRef.current(finalTranscript.trim(), true, true);
       }
     };
 
@@ -1016,7 +575,7 @@ export function Assistant({ onVoiceModeChange }: { onVoiceModeChange?: (active: 
        ERROR
     ======================================================== */
 
-    recognition.onerror = (event: any) => {
+    recognition.onerror = (event: RecognitionErrorEvent) => {
       setIsListening(false);
 
       // Silence and an intentional stop are normal browser recognition events.
@@ -1051,7 +610,9 @@ export function Assistant({ onVoiceModeChange }: { onVoiceModeChange?: (active: 
         recognition.stop();
       } catch {}
 
-      window.speechSynthesis?.cancel();
+      requestAbortRef.current?.abort();
+      if (resumeTimerRef.current) clearTimeout(resumeTimerRef.current);
+      speechRef.current?.cancel();
     };
   }, []);
 
@@ -1076,7 +637,7 @@ export function Assistant({ onVoiceModeChange }: { onVoiceModeChange?: (active: 
       return;
     }
 
-    stopSpeaking();
+    cancelCurrentResponse();
 
     try {
       recognitionRef.current.start();
@@ -1100,7 +661,7 @@ export function Assistant({ onVoiceModeChange }: { onVoiceModeChange?: (active: 
       return;
     }
 
-    if (isLoading || isSpeaking) {
+    if (requestActiveRef.current || window.speechSynthesis?.speaking) {
       return;
     }
 
@@ -1124,7 +685,7 @@ export function Assistant({ onVoiceModeChange }: { onVoiceModeChange?: (active: 
       return;
     }
 
-    stopSpeaking();
+    cancelCurrentResponse();
 
     conversationModeRef.current = true;
 
@@ -1132,9 +693,7 @@ export function Assistant({ onVoiceModeChange }: { onVoiceModeChange?: (active: 
 
     setInputValue("");
 
-    setTimeout(() => {
-      startConversationListening();
-    }, 400);
+    startConversationListening();
   };
 
   /* ==========================================================
@@ -1154,7 +713,7 @@ export function Assistant({ onVoiceModeChange }: { onVoiceModeChange?: (active: 
       recognitionRef.current?.stop();
     } catch {}
 
-    stopSpeaking();
+    cancelCurrentResponse();
 
     setIsListening(false);
   };
@@ -1179,7 +738,7 @@ export function Assistant({ onVoiceModeChange }: { onVoiceModeChange?: (active: 
     if (!followMessagesRef.current) return;
     chatRef.current?.scrollTo({
       top: chatRef.current.scrollHeight,
-      behavior: reducedMotion ? "instant" : "smooth",
+      behavior: reducedMotion || requestActiveRef.current ? "instant" : "smooth",
     });
   }, [messages, isLoading, reducedMotion]);
 
@@ -1669,7 +1228,12 @@ export function Assistant({ onVoiceModeChange }: { onVoiceModeChange?: (active: 
 
           {/* SEND / VOICE */}
 
-          {inputValue.trim() ? (
+          {isGenerating ? (
+            <button type="button" onClick={cancelCurrentResponse} aria-label="Stop response"
+              className="w-10 h-10 flex items-center justify-center rounded-full bg-[#165b45] text-white mr-1">
+              <Square className="w-4 h-4" />
+            </button>
+          ) : inputValue.trim() ? (
             <button
               type="submit"
               disabled={isLoading}
