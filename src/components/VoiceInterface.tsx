@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { X, Minus, Maximize2 } from "lucide-react";
 import { AssistantSpace } from "./AssistantSpace";
+import { JoJoWordmark } from "./JoJoWordmark";
 import styles from "./VoiceInterface.module.css";
 
 type Props = {
@@ -115,7 +116,7 @@ export function VoiceInterface({ isListening, isSpeaking, isThinking, speechPuls
   const phase = isSpeaking ? "speaking" : isThinking ? "thinking" : isListening ? "listening" : "idle";
   if (!mounted) return null;
   return createPortal(
-    <motion.div ref={dialogRef} className={styles.overlay} role="dialog" aria-modal="true" aria-label="Jojo voice conversation" initial={reducedMotion ? false : { opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: .3 }} onKeyDown={event => { if (event.key === "Escape") onClose(); }}>
+    <motion.div ref={dialogRef} className={styles.overlay} role="dialog" aria-modal="true" aria-label="JoJo voice conversation" initial={reducedMotion ? false : { opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: .3 }} onKeyDown={event => { if (event.key === "Escape") onClose(); }}>
       <motion.div className={`${styles.window} ${expanded ? styles.expanded : ""}`} initial={reducedMotion ? false : { scale: .97 }} animate={{ scale: 1 }} exit={{ scale: .97 }}>
         <div className={styles.titlebar}>
           <div className={styles.controls}>
@@ -123,7 +124,7 @@ export function VoiceInterface({ isListening, isSpeaking, isThinking, speechPuls
             <button aria-label="Return to chat" onClick={onClose}><Minus size={12} /></button>
             <button aria-label={expanded ? "Restore voice window" : "Maximize voice window"} onClick={() => setExpanded(!expanded)}><Maximize2 size={11} /></button>
           </div>
-          <span>JOJO</span>
+          <JoJoWordmark />
         </div>
         <div className={styles.scene} ref={visualRef} data-phase={phase}>
           <AssistantSpace />

@@ -21,6 +21,7 @@ import {
   UserPlus,
   ChevronLeft,
 } from "lucide-react";
+import { JoJoWordmark } from "./JoJoWordmark";
 import { LetterReveal } from "./LetterReveal";
 import { HeaderSocialLinks } from "./HeaderSocialLinks";
 
@@ -524,12 +525,12 @@ function DraggableWindow({
       onPointerDown={onPointerDown}
     >
       {/* Window Title Bar */}
-      {mobile && !["projects", "education", "skills"].includes(activeWindow) && <header className={`flex min-h-12 shrink-0 items-center gap-3 border-b px-3 ${activeWindow === "assistant" ? "border-emerald-300/10 bg-[#06120d] text-emerald-50" : "border-slate-100 bg-white text-slate-800"}`}><button type="button" aria-label="Back to desktop" onClick={() => { setActiveWindow(null); setIsMaximized(false); }} className="flex min-h-11 items-center gap-1 px-1 text-sm"><ChevronLeft size={22} />Back</button><span className="font-medium capitalize">{activeWindow === "assistant" ? "JOJO" : activeWindow}</span></header>}
+      {mobile && !["projects", "education", "skills"].includes(activeWindow) && <header className={`relative flex min-h-12 shrink-0 items-center gap-3 border-b px-3 ${activeWindow === "assistant" ? "border-emerald-300/10 bg-[#06120d] text-emerald-50" : "border-slate-100 bg-white text-slate-800"}`}><button type="button" aria-label="Back to desktop" onClick={() => { setActiveWindow(null); setIsMaximized(false); }} className="flex min-h-11 items-center gap-1 px-1 text-sm"><ChevronLeft size={22} />Back</button><span className={activeWindow === "assistant" ? "pointer-events-none absolute left-1/2 -translate-x-1/2" : "font-medium capitalize"}>{activeWindow === "assistant" ? <JoJoWordmark /> : activeWindow}</span></header>}
       {!mobile && activeWindow !== "projects" &&
         activeWindow !== "education" &&
         activeWindow !== "skills" && (
           <div
-            className={`h-12 border-b border-zinc-200/50 flex items-center px-4 gap-2 cursor-grab shrink-0 group ${
+            className={`relative h-12 border-b border-zinc-200/50 flex items-center px-4 gap-2 cursor-grab shrink-0 group ${
               activeWindow === "resume" ||
               activeWindow === "certificates" ||
               activeWindow === "about" ||
@@ -573,7 +574,7 @@ function DraggableWindow({
               <Maximize2 className="w-2 h-2 text-black/60 opacity-0 group-hover:opacity-100 transition-opacity" />
             </div>
             {activeWindow === "assistant" ? (
-              <div className="min-w-0 flex-1 text-center text-[14px] font-medium tracking-widest text-emerald-100" style={{ fontFamily: "'Amarna', sans-serif" }}><LetterReveal text="JOJO" /></div>
+              <div className="min-w-0 flex-1 text-center text-emerald-100"><span className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"><JoJoWordmark><LetterReveal text="JoJo" /></JoJoWordmark></span></div>
             ) : activeWindow === "certificates" ? (
               <div className="min-w-0 flex-1 text-center text-sm font-bold capitalize text-zinc-700"><LetterReveal text="Certificates" /></div>
             ) : <div className="flex-1" />}

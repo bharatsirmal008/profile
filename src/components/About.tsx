@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { JoJoWordmark } from "./JoJoWordmark";
 import Image from "next/image";
 import { motion, useReducedMotion } from "framer-motion";
 import { Check, Code2, Copy, Database, Mail, Sparkles, Terminal } from "lucide-react";
@@ -59,7 +60,7 @@ export function About() {
             <div className="space-y-4 text-sm leading-[1.95] text-[#777fa1]">
               <p>Hi, I’m Bharat Sirmal, a Computer Science student at Pillai College of Engineering, Panvel, graduating in 2027 with a CGPA of 8.74.</p>
               <p>I enjoy turning ideas into practical, user-friendly software. My main focus is <strong className="font-semibold text-[#8655ff]">Full-Stack Development</strong>, using Python, SQL, React, Next.js, Node.js, and MongoDB to build web applications, APIs, and reliable backend systems.</p>
-              <p>I’ve built <strong className="font-semibold text-[#8655ff]">YAOP</strong>, a community platform whose admin dashboard improved data-entry efficiency by about 40%, and <strong className="font-semibold text-[#8655ff]">JOJO Store</strong>, a full-stack e-commerce app with authentication, cart, checkout, and Stripe payments. I also built <strong className="font-semibold text-[#8655ff]">Bharat AI</strong>, a personal assistant that answers from my own knowledge base and supports voice interaction.</p>
+              <p>I’ve built <strong className="font-semibold text-[#8655ff]">YAOP</strong>, a community platform whose admin dashboard improved data-entry efficiency by about 40%, and <strong className="font-semibold text-[#8655ff]"><JoJoWordmark size={18} /> Store</strong>, a full-stack e-commerce app with authentication, cart, checkout, and Stripe payments. I also built <strong className="font-semibold text-[#8655ff]">Bharat AI</strong>, a personal assistant that answers from my own knowledge base and supports voice interaction.</p>
               <p>My <strong className="font-semibold text-[#8655ff]">Brain Tumor XAI</strong> project classifies four tumor types from multi-view MRI scans using PyTorch, with Grad-CAM heatmaps to explain each prediction.</p>
               <p>I interned at InAmigos Foundation, adding features to a live website, and I hold Google Cloud and Power BI certifications. I’m always eager to learn new technologies, collaborate, and build reliable products that solve real problems.</p>
             </div>

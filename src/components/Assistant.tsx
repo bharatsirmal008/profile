@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { normalizeAnswer, conversationPrefix, requestHistory } from "../lib/chat-format";
+import { normalizeAnswer, hideDocumentSources, conversationPrefix, requestHistory } from "../lib/chat-format";
 import { StreamingSpeech, readAnswerStream, detectLanguage, languageLocale, type AssistantLanguage } from "../lib/voice-stream";
 
 import {
@@ -30,6 +30,9 @@ import { AssistantSpace } from "./AssistantSpace";
 import styles from "./Assistant.module.css";
 
 import { RecruiterPanel, type RecruiterStatus } from "./RecruiterPanel";
+import { JoJoWordmark } from "./JoJoWordmark";
+import { AttachmentCard } from "./AttachmentCard";
+import { readAttachment, type ChatAttachment } from "../lib/attachment-store";
 
 import { VoiceInterface } from "./VoiceInterface";
 
@@ -55,6 +58,7 @@ type Message = {
   role: "user" | "ai";
   content: string;
   timestamp: string;
+  attachments?: ChatAttachment[];
 };
 
 type Conversation = {
@@ -94,7 +98,7 @@ const defaultMessages: Message[] = [
     id: "1",
     role: "ai",
     content:
-      "Hey! 👋\nI'm Jojo — Bharat's personal AI assistant.\nHow can I help you today?",
+      "Hey! 👋\nI'm JoJo — Bharat's personal AI assistant.\nHow can I help you today?",
     timestamp: "",
   },
 ];
@@ -121,6 +125,7 @@ export function Assistant({ onVoiceModeChange }: { onVoiceModeChange?: (active: 
 
 
   const [messages, setMessages] = useState<Message[]>(defaultMessages);
+  const [pendingAttachment, setPendingAttachment] = useState<ChatAttachment | null>(null);
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [editText, setEditText] = useState("");
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -289,7 +294,7 @@ export function Assistant({ onVoiceModeChange }: { onVoiceModeChange?: (active: 
   const resumeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const sendMessageRef = useRef<(text: string, voice?: boolean, conversation?: boolean) => void>(() => {});
   const activeConversationRef = useRef(activeConversationId);
-  useEffect(() => { activeConversationRef.current = activeConversationId; setEditingMessageId(null); }, [activeConversationId]);
+  useEffect(() => { activeConversationRef.current = activeConversationId; setEditingMessageId(null); setPendingAttachment(null); }, [activeConversationId]);
 
   /* ==========================================================
      VOICE CONVERSATION MODE
@@ -410,12 +415,14 @@ export function Assistant({ onVoiceModeChange }: { onVoiceModeChange?: (active: 
     stopSpeaking();
     rememberLanguage(detectLanguage(text, languageRef.current));
     const speech = createSpeech(continueConversation);
-    speech?.append(text);
+    speech?.append(hideDocumentSources(text));
     speech?.finish();
   };
 
   const sendMessage = async (messageText: string, fromVoice = false, conversation = false, editId?: string) => {
-    const text = messageText.trim();
+    const editedMessage = editId ? messages.find(message => message.id === editId) : undefined;
+    const attachment = pendingAttachment ?? editedMessage?.attachments?.[0];
+    const text = messageText.trim() || (attachment ? "Please analyze the attached file." : "");
     if (!text || requestActiveRef.current || conversationBusyRef.current) return;
     const currentSession = `${sessionIdRef.current || "session"}:${activeConversationRef.current || "chat"}`;
     const recruiterStatus = recruiterStatusRef.current;
@@ -444,7 +451,7 @@ export function Assistant({ onVoiceModeChange }: { onVoiceModeChange?: (active: 
     const aiMessageId = `${crypto.randomUUID()}_ai`;
     const timestamp = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
     followMessagesRef.current = true;
-    setMessages([...prefix, { id, role: "user", content: text, timestamp }]);
+    setMessages([...prefix, { id, role: "user", content: text, timestamp, attachments: attachment ? [attachment] : undefined }]);
     setEditingMessageId(null);
     if (!editId) setInputValue("");
     setIsLoading(true);
@@ -465,6 +472,27 @@ export function Assistant({ onVoiceModeChange }: { onVoiceModeChange?: (active: 
       }
     };
     try {
+      let revision = recruiterStatus.revision;
+      let history = requestHistory(prefix.filter(message => !excludedHistoryRef.current.get(currentSession)?.has(message.id)));
+      if (attachment && (pendingAttachment || attachment.revision !== revision)) {
+        const blob = await readAttachment(attachment.id);
+        if (!blob) throw new Error("This file is no longer stored in this browser. Select it again with +.");
+        if (controller.signal.aborted) return;
+        const upload = await fetch(`${API_BASE_URL}/recruiter/upload?session_id=${encodeURIComponent(currentSession)}&filename=${encodeURIComponent(attachment.name)}`, {
+          method: "POST", signal: controller.signal, headers: { "Content-Type": "application/octet-stream" }, body: blob,
+        });
+        const result = await upload.json();
+        if (!upload.ok) throw new Error(typeof result.detail === "string" ? result.detail : "The attachment could not be processed.");
+        if (controller.signal.aborted) return;
+        revision = result.context.revision;
+        recruiterStatusRef.current = { session: currentSession, revision, busy: false };
+        const ids = prefix.map(message => message.id);
+        excludedHistoryRef.current.set(currentSession, new Set(ids));
+        try { localStorage.setItem(`bharat_ai_context_history_${currentSession}`, JSON.stringify(ids)); } catch {}
+        history = [];
+        setMessages(previous => previous.map(message => message.id === id ? { ...message, attachments: [{ ...attachment, revision: revision ?? undefined }] } : message));
+        setPendingAttachment(null);
+      }
       const response = await fetch(ASK_ENDPOINT, {
         method: "POST",
         signal: controller.signal,
@@ -474,13 +502,22 @@ export function Assistant({ onVoiceModeChange }: { onVoiceModeChange?: (active: 
           voice: fromVoice || conversation,
           language: languageRef.current,
           session_id: currentSession,
-          recruiter_revision: recruiterStatus.revision,
-          history: requestHistory(prefix.filter(message => !excludedHistoryRef.current.get(currentSession)?.has(message.id))),
+          recruiter_revision: revision,
+          history,
         }),
       });
       if (!response.ok) {
         const failure = await response.json().catch(() => null);
         throw new Error(typeof failure?.detail === "string" ? failure.detail : `Backend error: ${response.status}`);
+      }
+      const contextRevision = response.headers.get("X-Context-Revision");
+      if (contextRevision) {
+        recruiterStatusRef.current = { session: currentSession, revision: contextRevision, busy: false };
+        if (contextRevision !== revision) {
+          const ids = prefix.map(message => message.id);
+          excludedHistoryRef.current.set(currentSession, new Set(ids));
+          try { localStorage.setItem(`bharat_ai_context_history_${currentSession}`, JSON.stringify(ids)); } catch {}
+        }
       }
       if (!response.body) throw new Error("Streaming is unavailable.");
       await readAnswerStream(response.body, token => {
@@ -1077,6 +1114,7 @@ export function Assistant({ onVoiceModeChange }: { onVoiceModeChange?: (active: 
                         leading-relaxed
                       "
                   >
+                    {msg.attachments && <div className="mb-3 flex flex-wrap gap-2">{msg.attachments.map(attachment => <AttachmentCard key={attachment.id} attachment={attachment}/>)}</div>}
                     {editingMessageId === msg.id ? (
                       <div className="min-w-[min(65vw,400px)] space-y-3">
                         <textarea autoFocus value={editText} onChange={event => setEditText(event.target.value)} rows={4} maxLength={12000}
@@ -1091,7 +1129,7 @@ export function Assistant({ onVoiceModeChange }: { onVoiceModeChange?: (active: 
                     ) : messageIndex === 0 && msg.id === "1" ? (
                       <div className={styles.welcome}>
                         <motion.h2 initial={reducedMotion ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>Hey! <span className={styles.wave}>👋</span></motion.h2>
-                        <p className={styles.intro}>I’m <strong>Jojo</strong> — Bharat’s personal AI assistant.</p>
+                        <p className={styles.intro}>I’m <strong><JoJoWordmark /></strong> — Bharat’s personal AI assistant.</p>
                         <p className={styles.question}>How can I help you today?</p>
                       </div>
                     ) : msg.role === "user" ? <p className="whitespace-pre-wrap break-words">{msg.content}</p> : <div className={styles.answer}><ReactMarkdown
@@ -1241,7 +1279,7 @@ export function Assistant({ onVoiceModeChange }: { onVoiceModeChange?: (active: 
           ================================================== */}
 
           {isLoading && (
-            <motion.div initial={reducedMotion ? false : { opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className={styles.thinking} role="status" aria-label="Jojo is thinking"><i /><i /><i /></motion.div>
+            <motion.div initial={reducedMotion ? false : { opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className={styles.thinking} role="status" aria-label="JoJo is thinking"><i /><i /><i /></motion.div>
           )}
 
           <div ref={messagesEndRef} />
@@ -1257,12 +1295,9 @@ export function Assistant({ onVoiceModeChange }: { onVoiceModeChange?: (active: 
         className={styles.composerWrap}
       >
         <RecruiterPanel key={recruiterSession} api={API_BASE_URL} session={recruiterSession}
-          language={() => languageRef.current} disabled={isGenerating}
-          onStatus={status => { recruiterStatusRef.current = status; }}
-          onResetHistory={() => {
-            const ids = messages.map(message => message.id);
-            excludedHistoryRef.current.set(recruiterSession, new Set(ids));
-            try { localStorage.setItem(`bharat_ai_context_history_${recruiterSession}`, JSON.stringify(ids)); } catch {}
+          disabled={isGenerating} pending={pendingAttachment} onAttachment={setPendingAttachment}
+          onStatus={status => {
+            recruiterStatusRef.current = { ...status, revision: status.preserveRevision && recruiterStatusRef.current.session === status.session ? recruiterStatusRef.current.revision : status.revision };
           }}
           onBegin={() => {
             conversationModeRef.current = false;
@@ -1274,6 +1309,28 @@ export function Assistant({ onVoiceModeChange }: { onVoiceModeChange?: (active: 
           onSubmit={handleSendMessage}
           className={`${styles.composer} ${styles.inlineComposer}`}
         >
+          {/* INPUT */}
+
+          <textarea
+            rows={1} maxLength={12000} aria-label="Message JoJo"
+            onKeyDown={event => { if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); handleSendMessage(); } }}
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            placeholder={
+              isListening ? "Listening..." : "Ask Bharat AI Anything......"
+            }
+            className="
+              flex-1
+              bg-transparent
+              text-base
+              text-white
+              placeholder:text-gray-400
+              placeholder:text-sm
+              outline-none
+              px-3
+            "
+          />
+
           {/* NORMAL MICROPHONE */}
 
           <button
@@ -1293,28 +1350,6 @@ export function Assistant({ onVoiceModeChange }: { onVoiceModeChange?: (active: 
           >
             <Mic className="w-5 h-5" />
           </button>
-
-          {/* INPUT */}
-
-          <textarea
-            rows={1} maxLength={12000} aria-label="Message Jojo"
-            onKeyDown={event => { if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); handleSendMessage(); } }}
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            placeholder={
-              isListening ? "Listening..." : "Ask Bharat AI anything..."
-            }
-            className="
-              flex-1
-              bg-transparent
-              text-base
-              text-white
-              placeholder:text-gray-400
-              placeholder:text-sm
-              outline-none
-              px-3
-            "
-          />
 
           {/* SPEAKING */}
 
@@ -1340,7 +1375,7 @@ export function Assistant({ onVoiceModeChange }: { onVoiceModeChange?: (active: 
               className="w-10 h-10 flex items-center justify-center rounded-full bg-[#165b45] text-white mr-1">
               <Square className="w-4 h-4" />
             </button>
-          ) : inputValue.trim() ? (
+          ) : inputValue.trim() || pendingAttachment ? (
             <button
               type="submit"
               disabled={isLoading}

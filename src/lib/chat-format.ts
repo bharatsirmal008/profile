@@ -1,3 +1,13 @@
+/** Hide model-added document citations while preserving the actual answer. */
+export function hideDocumentSources(text: string): string {
+  return text
+    .replace(/(^|\n)[ \t>*#_-]*\*{0,2}(?:sources?|स्रोत|स्रोतहरू)\*{0,2}\s*:[^\n]*/gi, "$1")
+    .replace(/\*{0,2}(?:sources?|स्रोत|स्रोतहरू)\s*:[^\n]*\.pdf[^\n]*/gi, "")
+    .replace(/\s*[([{][^()\[\]{}\n]*\.pdf[^()\[\]{}\n]*[)\]}]/gi, "")
+    .replace(/\b(?:Bharat_Sirmal_[\w.-]*|Resume)\.pdf\b/gi, "")
+    .replace(/\n{3,}/g, "\n\n");
+}
+
 /** Convert common model formatting tags to Markdown, preserving code literally. */
 export function normalizeAnswer(text: string): string {
   let fence: string | null = null;
@@ -9,7 +19,7 @@ export function normalizeAnswer(text: string): string {
       return line;
     }
     if (fence) return line;
-    return line.split(/(`+[^`]*`+)/g).map((part, index) => {
+    return hideDocumentSources(line).split(/(`+[^`]*`+)/g).map((part, index) => {
       if (index % 2) return part;
       return part
         .replace(/&lt;(\/?(?:br|p|div|strong|b|em|i|h[1-6]|ul|ol|li))\s*\/?&gt;/gi, "<$1>")
