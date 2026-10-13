@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { SentenceBuffer, StreamingSpeech, readAnswerStream } from '../src/lib/voice-stream.ts';
+import { SentenceBuffer, StreamingSpeech, readAnswerStream, detectLanguage, languageLocale } from '../src/lib/voice-stream.ts';
 
 function setup() {
   const played = [];
@@ -95,4 +95,51 @@ test('server error is surfaced rather than spoken as an answer', async () => {
 
 test('unexpected EOF is reported so partial output is not treated as complete', async () => {
   await assert.rejects(readAnswerStream(byteStream('{"type":"token","token":"partial"}\n'), () => {}, () => {}), /interrupted/);
+});
+
+
+test('Hindi/Nepali commands select the right language and keep follow-up preference', () => {
+  assert.equal(detectLanguage('Can you talk in Hindi?'), 'hi');
+  assert.equal(detectLanguage('Can you speak Nepali?', 'hi'), 'ne');
+  assert.equal(detectLanguage('Switch to English', 'ne'), 'en');
+  assert.equal(detectLanguage('भारतको कमजोरी के छ?'), 'ne');
+  assert.equal(detectLanguage('अच्छा बताओ'), 'hi');
+  assert.equal(detectLanguage('tell me more', 'hi'), 'hi');
+  assert.equal(detectLanguage('What is Hindi?'), 'en');
+  assert.equal(languageLocale('ne'), 'ne-NP');
+});
+
+test('Devanagari sentence boundaries start playback before EOF', () => {
+  const b = new SentenceBuffer();
+  assert.deepEqual(b.push('हाँ, मैं बता सकता हूँ। अगला'), ['हाँ, मैं बता सकता हूँ।']);
+});
+
+test('Hindi speech chooses a Hindi voice instead of an English male voice', () => {
+  const played = [];
+  const hindi = { name: 'Hindi voice', lang: 'hi-IN' };
+  const speech = new StreamingSpeech({ language: 'hi',
+    synth: { speak: u => played.push(u), cancel() {}, getVoices: () => [{ name: 'David', lang: 'en-US' }, hindi] },
+    createUtterance: text => ({ text }), onSpeaking() {}, onDone() {}, onPulse() {},
+  });
+  speech.append('नमस्ते।');
+  assert.equal(played[0].voice, hindi);
+  assert.equal(played[0].lang, 'hi-IN');
+});
+
+test('missing Nepali voice reports limitation rather than reading with English voice', () => {
+  const played = []; let error;
+  const speech = new StreamingSpeech({ language: 'ne',
+    synth: { speak: u => played.push(u), cancel() {}, getVoices: () => [{ name: 'David', lang: 'en-US' }] },
+    createUtterance: text => ({ text }), onSpeaking() {}, onDone() {}, onPulse() {}, onError: e => { error = e; },
+  });
+  speech.append('नमस्कार।');
+  assert.equal(played.length, 0);
+  assert.equal(error, 'language-unavailable');
+});
+
+test('server language event is received before answer tokens', async () => {
+  const events = [];
+  await readAnswerStream(byteStream('{"type":"language","language":"hi"}\n{"type":"token","token":"नमस्ते"}\n{"type":"done"}'),
+    token => events.push(token), () => {}, language => events.push(language));
+  assert.deepEqual(events, ['hi', 'नमस्ते']);
 });

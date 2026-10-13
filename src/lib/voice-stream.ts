@@ -1,3 +1,24 @@
+export type AssistantLanguage = "en" | "hi" | "ne";
+export const languageLocale = (language: AssistantLanguage) => ({ en: "en-IN", hi: "hi-IN", ne: "ne-NP" })[language];
+
+export function detectLanguage(text: string, preferred: AssistantLanguage = "en"): AssistantLanguage {
+  const q = text.toLowerCase();
+  if (/speak|talk|reply|respond|answer|switch|भाषा|बोल|बात|जवाफ|जवाब|बताओ|b[oau]l|baat/.test(q)
+      && !/don't|do not|नहीं.*बोल|नबोल/.test(q)) {
+    if (/nepali|नेपाली/.test(q)) return "ne";
+    if (/hindi|हिन्दी|हिंदी/.test(q)) return "hi";
+    if (/english|अंग्रेजी|अंग्रेज़ी|अङ्ग्रेजी/.test(q)) return "en";
+  }
+  if (/[\u0900-\u097f]/.test(q)) {
+    if (/(?:^|[^\u0900-\u097f])(?:छ|छन्|छौ|हुन्छ|गर्छ|गर्न|कस्तो|तपाईं|तिमी|मेरो|उसको|बताउनु)(?=$|[^\u0900-\u097f])/.test(q)) return "ne";
+    if (/क्या|कैसे|है|हैं|बताओ|करेंगे/.test(q)) return "hi";
+    return preferred === "ne" ? "ne" : "hi";
+  }
+  if (/\b(kya|kaise|batao|bataiye|hai|hain|hoga|kamzori)\b/.test(q)) return "hi";
+  if (/\b(chha|cha|kasari|kasto|mero|tapai|garcha)\b/.test(q)) return "ne";
+  return preferred;
+}
+
 // Small, testable browser helpers for incremental text and speech.
 export class SentenceBuffer {
   private text = "";
@@ -7,7 +28,7 @@ export class SentenceBuffer {
     const ready: string[] = [];
     while (this.text) {
       let end = -1;
-      const boundaries = /[.!?](?=\s)|\n\n/g;
+      const boundaries = /[।॥]|[.!?](?=\s)|\n\n/g;
       for (const match of this.text.matchAll(boundaries)) {
         const candidate = this.text.slice(0, match.index + match[0].length);
         if (/\b(?:Mr|Mrs|Ms|Dr|Prof|e\.g|i\.e)\.$/i.test(candidate)) continue;
@@ -27,6 +48,7 @@ export class SentenceBuffer {
 }
 
 type SpeechOptions = {
+  language?: AssistantLanguage;
   synth: Pick<SpeechSynthesis, "speak" | "cancel" | "getVoices">;
   createUtterance: (text: string) => SpeechSynthesisUtterance;
   onSpeaking: (speaking: boolean) => void;
@@ -53,6 +75,8 @@ export class StreamingSpeech {
     this.queue.push(...this.sentences.push(text));
     this.pump();
   }
+
+  setLanguage(language: AssistantLanguage) { this.options.language = language; }
 
   finish() {
     if (this.cancelled || this.finished) return;
@@ -85,13 +109,20 @@ export class StreamingSpeech {
       .replace(/[*#_`]/g, "").replace(/\s+/g, " ").trim();
     if (!clean) { this.pump(); return; }
     const utterance = this.options.createUtterance(clean);
-    const voices = this.options.synth.getVoices().filter(v => v.lang.startsWith("en"));
+    const language = this.options.language || "en";
+    const available = this.options.synth.getVoices();
+    const voices = available.filter(v => v.lang.toLowerCase().split(/[-_]/)[0] === language);
+    if (available.length && !voices.length && language !== "en") {
+      this.options.onError?.("language-unavailable");
+      this.cancel();
+      return;
+    }
     const male = (v: SpeechSynthesisVoice) => !/female/i.test(v.name) && /male|ravi|prabhat|rishi|david|mark|guy|daniel/i.test(v.name);
-    const voice = voices.find(v => v.lang.toLowerCase() === "en-in" && male(v))
-      || voices.find(male) || voices.find(v => v.lang.toLowerCase() === "en-in") || voices[0];
+    const locale = languageLocale(language);
+    const voice = voices.find(v => v.lang.toLowerCase() === locale.toLowerCase() && male(v))
+      || voices.find(v => v.lang.toLowerCase() === locale.toLowerCase()) || voices.find(male) || voices[0];
     if (voice) utterance.voice = voice;
-    // Use the browser default if voices have not loaded yet, rather than waiting.
-    utterance.lang = voice?.lang || "en-IN";
+    utterance.lang = voice?.lang || locale;
     utterance.rate = 1.15;
     utterance.pitch = 1.25;
     this.active = utterance;
@@ -121,6 +152,7 @@ export async function readAnswerStream(
   body: ReadableStream<Uint8Array>,
   onToken: (token: string) => void,
   onMetrics: (metrics: Record<string, unknown>) => void,
+  onLanguage?: (language: AssistantLanguage) => void,
 ) {
   const reader = body.getReader();
   const decoder = new TextDecoder();
@@ -131,6 +163,7 @@ export async function readAnswerStream(
     const event = JSON.parse(line);
     if (event.type === "error") throw new Error(event.error || "Answer generation failed.");
     if (event.type === "done") { complete = true; return; }
+    if (event.type === "language" && ["en", "hi", "ne"].includes(event.language)) { onLanguage?.(event.language); return; }
     if (event.type === "metrics") { onMetrics(event); return; }
     if (event.type === "token" && typeof event.token === "string") onToken(event.token);
   };

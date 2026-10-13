@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
-import { StreamingSpeech, readAnswerStream } from "../lib/voice-stream";
+import { StreamingSpeech, readAnswerStream, detectLanguage, languageLocale, type AssistantLanguage } from "../lib/voice-stream";
 
 import {
   Send,
@@ -255,6 +255,21 @@ export function Assistant({ onVoiceModeChange }: { onVoiceModeChange?: (active: 
      SELECTED VOICE
   ========================================================== */
 
+  const [language, setLanguage] = useState<AssistantLanguage>("en");
+  const languageRef = useRef<AssistantLanguage>("en");
+  const [voiceNotice, setVoiceNotice] = useState("");
+  useEffect(() => {
+    const saved = localStorage.getItem("bharat_ai_language");
+    if (saved === "en" || saved === "hi" || saved === "ne") {
+      languageRef.current = saved;
+      setLanguage(saved);
+    }
+  }, []);
+  const rememberLanguage = (value: AssistantLanguage) => {
+    languageRef.current = value;
+    setLanguage(value);
+    try { localStorage.setItem("bharat_ai_language", value); } catch {}
+  };
   const speechRef = useRef<StreamingSpeech | null>(null);
   const requestAbortRef = useRef<AbortController | null>(null);
   const requestActiveRef = useRef(false);
@@ -336,6 +351,7 @@ export function Assistant({ onVoiceModeChange }: { onVoiceModeChange?: (active: 
       return null;
     }
     const speech = new StreamingSpeech({
+      language: languageRef.current,
       synth: window.speechSynthesis,
       createUtterance: text => new SpeechSynthesisUtterance(text),
       onSpeaking: setIsSpeaking,
@@ -344,6 +360,10 @@ export function Assistant({ onVoiceModeChange }: { onVoiceModeChange?: (active: 
       onDone: () => { if (conversation) resumeConversation(); },
       onError: error => {
         console.warn("Voice playback unavailable:", error);
+        const name = { en: "English", hi: "Hindi", ne: "Nepali" }[languageRef.current];
+        setVoiceNotice(error === "language-unavailable"
+          ? `${name} voice is not available on this device. Install a matching speech voice or continue with text.`
+          : `${name} audio could not play. Please check browser audio permission; text replies still work.`);
         // Keep text available and let the user restart voice after a permission/device error.
         conversationModeRef.current = false;
         conversationBusyRef.current = false;
@@ -374,6 +394,7 @@ export function Assistant({ onVoiceModeChange }: { onVoiceModeChange?: (active: 
 
   const speakResponse = (text: string, continueConversation = false) => {
     stopSpeaking();
+    rememberLanguage(detectLanguage(text, languageRef.current));
     const speech = createSpeech(continueConversation);
     speech?.append(text);
     speech?.finish();
@@ -383,6 +404,8 @@ export function Assistant({ onVoiceModeChange }: { onVoiceModeChange?: (active: 
     const text = messageText.trim();
     if (!text || requestActiveRef.current || conversationBusyRef.current) return;
     stopSpeaking();
+    rememberLanguage(detectLanguage(text, languageRef.current));
+    setVoiceNotice("");
     try { recognitionRef.current?.stop(); } catch {}
     requestActiveRef.current = true;
     setIsGenerating(true);
@@ -421,6 +444,7 @@ export function Assistant({ onVoiceModeChange }: { onVoiceModeChange?: (active: 
         body: JSON.stringify({
           question: text,
           voice: fromVoice || conversation,
+          language: languageRef.current,
           session_id: `${sessionIdRef.current || "session"}:${activeConversationRef.current || "chat"}`,
         }),
       });
@@ -433,7 +457,10 @@ export function Assistant({ onVoiceModeChange }: { onVoiceModeChange?: (active: 
         speech?.append(token);
         if (!published) publish();
         else if (!renderTimer) renderTimer = setTimeout(publish, 40);
-      }, metrics => console.debug("Bharat AI server timing", metrics));
+      }, metrics => console.debug("Bharat AI server timing", metrics), resolvedLanguage => {
+        rememberLanguage(resolvedLanguage);
+        speech?.setLanguage(resolvedLanguage);
+      });
       if (!fullAnswer.trim()) throw new Error("AI returned an empty response.");
       if (renderTimer) clearTimeout(renderTimer);
       publish();
@@ -499,7 +526,7 @@ export function Assistant({ onVoiceModeChange }: { onVoiceModeChange?: (active: 
 
     recognition.interimResults = true;
 
-    recognition.lang = "en-IN";
+    recognition.lang = languageLocale(languageRef.current);
 
     /* ========================================================
        RESULT
@@ -589,6 +616,11 @@ export function Assistant({ onVoiceModeChange }: { onVoiceModeChange?: (active: 
       }
 
       console.warn("Speech recognition unavailable:", event.error);
+      if (event.error === "language-not-supported") {
+        conversationModeRef.current = false;
+        setIsConversationMode(false);
+        setVoiceNotice("Your browser cannot recognize the selected language. Try Chrome/Edge with that language enabled, or type your question.");
+      }
 
       if (event.error === "not-allowed" || event.error === "service-not-allowed") {
         conversationModeRef.current = false;
@@ -640,6 +672,7 @@ export function Assistant({ onVoiceModeChange }: { onVoiceModeChange?: (active: 
     cancelCurrentResponse();
 
     try {
+      recognitionRef.current.lang = languageLocale(languageRef.current);
       recognitionRef.current.start();
 
       setIsListening(true);
@@ -666,6 +699,7 @@ export function Assistant({ onVoiceModeChange }: { onVoiceModeChange?: (active: 
     }
 
     try {
+      recognitionRef.current.lang = languageLocale(languageRef.current);
       recognitionRef.current.start();
 
       setIsListening(true);
@@ -1163,6 +1197,21 @@ export function Assistant({ onVoiceModeChange }: { onVoiceModeChange?: (active: 
       <div
         className={styles.composerWrap}
       >
+        <div className="flex items-center gap-2 px-3 pb-2 text-sm text-slate-200">
+          <label htmlFor="assistant-language">Language / भाषा</label>
+          <select id="assistant-language" value={language}
+            className="rounded border border-slate-600 bg-slate-900 px-2 py-1"
+            onChange={event => {
+              stopVoiceConversation();
+              rememberLanguage(event.target.value as AssistantLanguage);
+              setVoiceNotice("");
+            }}>
+            <option value="en">English</option>
+            <option value="hi">हिन्दी</option>
+            <option value="ne">नेपाली</option>
+          </select>
+        </div>
+        {voiceNotice && <p role="status" className="px-3 pb-2 text-sm text-amber-200">{voiceNotice}</p>}
         <form
           onSubmit={handleSendMessage}
           className={styles.composer}
