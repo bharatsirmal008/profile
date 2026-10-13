@@ -2,6 +2,8 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import { normalizeAnswer, conversationPrefix, requestHistory } from "../lib/chat-format";
 import { StreamingSpeech, readAnswerStream, detectLanguage, languageLocale, type AssistantLanguage } from "../lib/voice-stream";
 
 import {
@@ -119,6 +121,8 @@ export function Assistant({ onVoiceModeChange }: { onVoiceModeChange?: (active: 
 
 
   const [messages, setMessages] = useState<Message[]>(defaultMessages);
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+  const [editText, setEditText] = useState("");
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeConversationId, setActiveConversationId] = useState<
     string | null
@@ -285,7 +289,7 @@ export function Assistant({ onVoiceModeChange }: { onVoiceModeChange?: (active: 
   const resumeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const sendMessageRef = useRef<(text: string, voice?: boolean, conversation?: boolean) => void>(() => {});
   const activeConversationRef = useRef(activeConversationId);
-  useEffect(() => { activeConversationRef.current = activeConversationId; }, [activeConversationId]);
+  useEffect(() => { activeConversationRef.current = activeConversationId; setEditingMessageId(null); }, [activeConversationId]);
 
   /* ==========================================================
      VOICE CONVERSATION MODE
@@ -319,6 +323,7 @@ export function Assistant({ onVoiceModeChange }: { onVoiceModeChange?: (active: 
 
   const sessionIdRef = useRef<string>("");
   const [recruiterBaseSession, setRecruiterBaseSession] = useState("");
+  const excludedHistoryRef = useRef(new Map<string, Set<string>>());
   const recruiterStatusRef = useRef<RecruiterStatus>({ session: "", revision: null, busy: false });
   const recruiterSession = recruiterBaseSession && activeConversationId ? `${recruiterBaseSession}:${activeConversationId}` : "";
 
@@ -409,7 +414,7 @@ export function Assistant({ onVoiceModeChange }: { onVoiceModeChange?: (active: 
     speech?.finish();
   };
 
-  const sendMessage = async (messageText: string, fromVoice = false, conversation = false) => {
+  const sendMessage = async (messageText: string, fromVoice = false, conversation = false, editId?: string) => {
     const text = messageText.trim();
     if (!text || requestActiveRef.current || conversationBusyRef.current) return;
     const currentSession = `${sessionIdRef.current || "session"}:${activeConversationRef.current || "chat"}`;
@@ -428,12 +433,20 @@ export function Assistant({ onVoiceModeChange }: { onVoiceModeChange?: (active: 
     const controller = new AbortController();
     requestAbortRef.current = controller;
     const started = performance.now();
-    const id = crypto.randomUUID();
-    const aiMessageId = `${id}_ai`;
+    const prefix = conversationPrefix(messages, editId);
+    if (!excludedHistoryRef.current.has(currentSession)) {
+      try {
+        const ids = JSON.parse(localStorage.getItem(`bharat_ai_context_history_${currentSession}`) || "[]");
+        excludedHistoryRef.current.set(currentSession, new Set(Array.isArray(ids) ? ids.filter((id): id is string => typeof id === "string") : []));
+      } catch { excludedHistoryRef.current.set(currentSession, new Set()); }
+    }
+    const id = editId || crypto.randomUUID();
+    const aiMessageId = `${crypto.randomUUID()}_ai`;
     const timestamp = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
     followMessagesRef.current = true;
-    setMessages(prev => [...prev, { id, role: "user", content: text, timestamp }]);
-    setInputValue("");
+    setMessages([...prefix, { id, role: "user", content: text, timestamp }]);
+    setEditingMessageId(null);
+    if (!editId) setInputValue("");
     setIsLoading(true);
     const speech = fromVoice || conversation ? createSpeech(conversation, started) : null;
     let fullAnswer = "";
@@ -462,6 +475,7 @@ export function Assistant({ onVoiceModeChange }: { onVoiceModeChange?: (active: 
           language: languageRef.current,
           session_id: currentSession,
           recruiter_revision: recruiterStatus.revision,
+          history: requestHistory(prefix.filter(message => !excludedHistoryRef.current.get(currentSession)?.has(message.id))),
         }),
       });
       if (!response.ok) {
@@ -1063,14 +1077,28 @@ export function Assistant({ onVoiceModeChange }: { onVoiceModeChange?: (active: 
                         leading-relaxed
                       "
                   >
-                    {messageIndex === 0 && msg.id === "1" ? (
+                    {editingMessageId === msg.id ? (
+                      <div className="min-w-[min(65vw,400px)] space-y-3">
+                        <textarea autoFocus value={editText} onChange={event => setEditText(event.target.value)} rows={4} maxLength={12000}
+                          aria-label="Edit message" onKeyDown={event => {
+                            if (event.key === "Escape") setEditingMessageId(null);
+                            if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) { event.preventDefault(); void sendMessage(editText, false, false, msg.id); }
+                          }} className="w-full resize-y rounded-xl border border-emerald-300/30 bg-[#071a14] p-3 text-white outline-none focus:border-emerald-300"/>
+                        <p className="text-xs text-emerald-100/60">Resending replaces this message and the replies after it.</p>
+                        <div className="flex justify-end gap-2"><button type="button" onClick={() => setEditingMessageId(null)} className="rounded-lg px-3 py-2 text-sm text-gray-300">Cancel</button>
+                          <button type="button" disabled={!editText.trim() || isGenerating} onClick={() => sendMessage(editText, false, false, msg.id)} className="rounded-lg bg-emerald-700 px-3 py-2 text-sm text-white disabled:opacity-50">Save &amp; resend</button></div>
+                      </div>
+                    ) : messageIndex === 0 && msg.id === "1" ? (
                       <div className={styles.welcome}>
                         <motion.h2 initial={reducedMotion ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>Hey! <span className={styles.wave}>👋</span></motion.h2>
                         <p className={styles.intro}>I’m <strong>Jojo</strong> — Bharat’s personal AI assistant.</p>
                         <p className={styles.question}>How can I help you today?</p>
                       </div>
-                    ) : <ReactMarkdown
+                    ) : msg.role === "user" ? <p className="whitespace-pre-wrap break-words">{msg.content}</p> : <div className={styles.answer}><ReactMarkdown
+                      remarkPlugins={[remarkGfm]} skipHtml
                       components={{
+                        table: ({ children }) => <div className={styles.tableScroll} role="region" aria-label="Answer table" tabIndex={0}><table>{children}</table></div>,
+                        a: ({ children, href }) => <a href={href} target="_blank" rel="noopener noreferrer">{children}</a>,
                         h1: ({ node, ...props }) => (
                           <h1
                             className="text-xl font-bold mb-3 text-white"
@@ -1112,8 +1140,8 @@ export function Assistant({ onVoiceModeChange }: { onVoiceModeChange?: (active: 
                         ),
                       }}
                     >
-                      {msg.content}
-                    </ReactMarkdown>}
+                      {normalizeAnswer(msg.content)}
+                    </ReactMarkdown></div>}
                   </div>
                 </div>
 
@@ -1130,14 +1158,17 @@ export function Assistant({ onVoiceModeChange }: { onVoiceModeChange?: (active: 
                     {msg.timestamp}
                   </span>
 
+                  {msg.role === "user" && editingMessageId !== msg.id && <button type="button" disabled={isGenerating} aria-label="Edit message" title="Edit and resend"
+                    onClick={() => { stopSpeaking(); setEditingMessageId(msg.id); setEditText(msg.content); }}
+                    className="rounded p-1 text-gray-400 transition-colors hover:text-white focus-visible:text-white disabled:opacity-40"><Edit2 className="h-3.5 w-3.5"/></button>}
                   {msg.role === "ai" && (
                     <div
                       className="
                           flex
                           items-center
                           gap-3
-                          opacity-0
-                          group-hover:opacity-100
+                          opacity-100 sm:opacity-0
+                          sm:group-hover:opacity-100 focus-within:opacity-100
                           transition-opacity
                         "
                     >
@@ -1228,16 +1259,20 @@ export function Assistant({ onVoiceModeChange }: { onVoiceModeChange?: (active: 
         <RecruiterPanel key={recruiterSession} api={API_BASE_URL} session={recruiterSession}
           language={() => languageRef.current} disabled={isGenerating}
           onStatus={status => { recruiterStatusRef.current = status; }}
+          onResetHistory={() => {
+            const ids = messages.map(message => message.id);
+            excludedHistoryRef.current.set(recruiterSession, new Set(ids));
+            try { localStorage.setItem(`bharat_ai_context_history_${recruiterSession}`, JSON.stringify(ids)); } catch {}
+          }}
           onBegin={() => {
             conversationModeRef.current = false;
             setIsConversationMode(false);
             try { recognitionRef.current?.stop(); } catch {}
             cancelCurrentResponse();
-          }} />
-        {voiceNotice && <p role="status" className="px-3 pb-2 text-sm text-amber-200">{voiceNotice}</p>}
+          }}>
         <form
           onSubmit={handleSendMessage}
-          className={styles.composer}
+          className={`${styles.composer} ${styles.inlineComposer}`}
         >
           {/* NORMAL MICROPHONE */}
 
@@ -1262,7 +1297,7 @@ export function Assistant({ onVoiceModeChange }: { onVoiceModeChange?: (active: 
           {/* INPUT */}
 
           <textarea
-            rows={1} aria-label="Message Jojo"
+            rows={1} maxLength={12000} aria-label="Message Jojo"
             onKeyDown={event => { if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); handleSendMessage(); } }}
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
@@ -1432,6 +1467,8 @@ export function Assistant({ onVoiceModeChange }: { onVoiceModeChange?: (active: 
             </button>
           )}
         </form>
+        </RecruiterPanel>
+        {voiceNotice && <p role="status" className="mx-auto max-w-[620px] px-3 pt-2 text-xs text-amber-200">{voiceNotice}</p>}
 
         {/* MODE INFORMATION */}
 

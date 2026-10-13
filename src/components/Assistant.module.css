@@ -24,3 +24,15 @@
 @keyframes shootAcross{0%,84%{opacity:0;transform:translate3d(-100px,-60px,0) rotate(32deg)}85%{opacity:.8}92%{opacity:0;transform:translate3d(240px,150px,0) rotate(32deg)}100%{opacity:0;transform:translate3d(240px,150px,0) rotate(32deg)}}
 @media(prefers-reduced-motion:reduce){.shootingStars{display:none}}
 @media(max-width:767px){.stars i:nth-child(n+61){display:none}.nebula{filter:blur(12px)}.aurora{filter:blur(8px)}.disclaimer{line-height:1.5}}
+
+/* A single composer surface contains attachments, typing, mic and send. */
+.inlineComposer{flex:1;min-width:0;max-width:none;margin:0;padding:8px 0;border:0;border-radius:0;background:none;backdrop-filter:none;box-shadow:none;align-items:flex-end}
+.inlineComposer:before{display:none}.inlineComposer:focus-within{border:0;box-shadow:none}
+.inlineComposer textarea{height:auto;min-height:30px;max-height:150px;line-height:22px;font-size:14px;letter-spacing:0;padding:4px 6px;overflow-y:auto}
+.answer{min-width:0;font-size:14px;letter-spacing:0;line-height:1.75;overflow-wrap:anywhere}
+.answer pre{overflow-x:auto;max-width:100%;margin:14px 0;padding:14px;border:1px solid #34f5a025;border-radius:12px;background:#0009;white-space:pre;overflow-wrap:normal}
+.answer code{font-size:.9em;font-family:Consolas,monospace;background:#ffffff0a;border-radius:4px;padding:2px 4px}.answer pre code{padding:0;background:none}
+.answer a{color:#7bfbc9;text-decoration:underline;text-underline-offset:3px}.answer blockquote{border-left:3px solid #34f5a060;padding-left:14px;color:#c4d6cd;margin:12px 0}
+.tableScroll{max-width:100%;overflow-x:auto;margin:16px 0;border:1px solid #34f5a035;border-radius:12px;scrollbar-width:thin;scrollbar-color:#34f5a060 transparent}
+.tableScroll table{border-collapse:collapse;min-width:100%;font-size:13px;line-height:1.6}.tableScroll th,.tableScroll td{text-align:left;vertical-align:top;padding:11px 14px;border-bottom:1px solid #34f5a025;min-width:120px;max-width:360px;overflow-wrap:normal}
+.tableScroll th{font-weight:600;background:#10382a;color:#c5ffe6;white-space:nowrap}.tableScroll tbody tr:nth-child(even){background:#14332650}.tableScroll tr:last-child td{border-bottom:0}

@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { BriefcaseBusiness, FileUp, Mic, X } from "lucide-react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { Plus, FileUp, Mic, X } from "lucide-react";
 import { languageLocale, type AssistantLanguage } from "../lib/voice-stream";
 
 export type RecruiterStatus = { session: string; revision: string | null; busy: boolean };
@@ -14,9 +14,10 @@ type Recognition = {
   onend: (() => void) | null;
 };
 
-export function RecruiterPanel({ api, session, language, disabled, onStatus, onBegin }: {
+export function RecruiterPanel({ api, session, language, disabled, onStatus, onBegin, onResetHistory, children }: {
+  children: ReactNode;
   api: string; session: string; language: () => AssistantLanguage; disabled: boolean;
-  onStatus: (status: RecruiterStatus) => void; onBegin: () => void;
+  onStatus: (status: RecruiterStatus) => void; onBegin: () => void; onResetHistory: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const [context, setContext] = useState<Context | null>(null);
@@ -26,12 +27,26 @@ export function RecruiterPanel({ api, session, language, disabled, onStatus, onB
   const [listening, setListening] = useState(false);
   const recognition = useRef<Recognition | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
-  const callbacks = useRef({ onStatus, onBegin, language });
+  const callbacks = useRef({ onStatus, onBegin, onResetHistory, language });
   const contextRef = useRef<Context | null>(null);
   const controller = useRef<AbortController | null>(null);
   const mounted = useRef(true);
   const working = useRef(false);
-  useEffect(() => { callbacks.current = { onStatus, onBegin, language }; });
+  const container = useRef<HTMLDivElement>(null);
+  const trigger = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const close = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && !recognition.current) { setOpen(false); trigger.current?.focus(); }
+    };
+    const outside = (event: PointerEvent) => {
+      if (container.current && !container.current.contains(event.target as Node) && !recognition.current) setOpen(false);
+    };
+    document.addEventListener("keydown", close);
+    document.addEventListener("pointerdown", outside);
+    return () => { document.removeEventListener("keydown", close); document.removeEventListener("pointerdown", outside); };
+  }, [open]);
+  useEffect(() => { callbacks.current = { onStatus, onBegin, onResetHistory, language }; });
 
   useEffect(() => {
     mounted.current = true;
@@ -102,8 +117,9 @@ export function RecruiterPanel({ api, session, language, disabled, onStatus, onB
       if (abort.signal.aborted) return;
       contextRef.current = data.context;
       setContext(data.context);
+      callbacks.current.onResetHistory();
       setText("");
-      setNotice(remove ? "Job description removed. Earlier assessment messages remain visible; new answers use the current context." : "Requirements attached. Ask any hiring or role-specific question in the chat below.");
+      setNotice("");
       if (!remove) setOpen(false);
     } catch (error) {
       if (!abort.signal.aborted) setNotice(error instanceof Error ? error.message : "Upload failed. Please try again.");
@@ -140,6 +156,7 @@ export function RecruiterPanel({ api, session, language, disabled, onStatus, onB
     mic.onend = () => {
       if (!mounted.current) return;
       setListening(false);
+      recognition.current = null;
       callbacks.current.onStatus({ session, revision: contextRef.current?.revision ?? null, busy: working.current });
     };
     try {
@@ -150,17 +167,10 @@ export function RecruiterPanel({ api, session, language, disabled, onStatus, onB
     } catch { setNotice("Could not start the microphone. Check microphone permission."); }
   }
 
-  return <section className="pointer-events-auto mx-auto mb-2 w-full max-w-[620px] max-h-[50dvh] overflow-y-auto rounded-xl border border-emerald-300/20 bg-[#081c18] p-3 text-sm text-emerald-50" aria-label="Recruiter job description">
-    <div className="flex flex-wrap items-center gap-2">
-      <button type="button" disabled={disabled || busy || !session || listening} onClick={() => setOpen(!open)} aria-expanded={open} aria-controls="recruiter-details"
-        className="flex items-center gap-2 rounded-lg px-2 py-1 text-emerald-200 hover:bg-emerald-900/40 disabled:opacity-50">
-        <BriefcaseBusiness size={16} /> {context ? "Replace job description" : "Recruiter · Add job description"}
-      </button>
-      {context && <><span className="min-w-0 flex-1 truncate" title={context.name}>Attached: {context.name}</span>
-        <button type="button" disabled={disabled || busy || listening} onClick={() => save(undefined, true)} aria-label="Remove job description" className="rounded p-1 hover:bg-red-900/50"><X size={16} /></button></>}
-      {busy && <span role="status">Processing…</span>}
-    </div>
-    {open && <div id="recruiter-details" className="mt-3 space-y-3">
+  return <div ref={container} className="pointer-events-auto relative mx-auto w-full max-w-[620px] text-sm text-emerald-50" aria-label="Chat composer">
+    {open && <div id="recruiter-details" role="region" aria-label="Job description options" className="absolute bottom-full left-0 right-0 mb-3 max-h-[55dvh] overflow-y-auto rounded-2xl border border-emerald-300/25 bg-[#081c18] p-4 shadow-2xl">
+      <div className="mb-3 flex items-center justify-between"><h3 className="font-semibold">Add job description</h3><button type="button" aria-label="Close job description options" disabled={listening} onClick={() => { setOpen(false); trigger.current?.focus(); }} className="rounded p-1 hover:bg-emerald-900/40"><X size={16}/></button></div>
+      <div className="space-y-3">
       <p className="text-xs text-emerald-100/70">Upload, paste or dictate your requirements, then ask any question about Bharat’s fit. Requirements are sent to the AI provider for this chat and expire after one hour or a server restart.</p>
       <input ref={fileInput} type="file" accept=".pdf,.docx,.txt" className="hidden" aria-label="Upload job description" disabled={disabled || busy || listening} onChange={event => { const file = event.target.files?.[0]; if (file) void save(file); }} />
       <button type="button" disabled={disabled || busy || listening} onClick={() => fileInput.current?.click()} className="flex items-center gap-2 rounded-lg border border-emerald-300/30 px-3 py-2 disabled:opacity-50"><FileUp size={16} /> Upload PDF / Word / TXT · up to 5 MB</button>
@@ -173,7 +183,16 @@ export function RecruiterPanel({ api, session, language, disabled, onStatus, onB
         <span className="text-xs text-emerald-100/60">{text.length.toLocaleString()} / 24,000</span>
       </div>
       <p className="text-xs text-emerald-100/60">Use a searchable PDF or DOCX. For scans, paste the extracted text. Replacing requirements starts a fresh assessment while keeping earlier messages visible.</p>
+      </div>
     </div>}
+    <div className="rounded-[26px] border border-emerald-300/50 bg-[#071a14]/95 shadow-[0_0_20px_#10b98122] backdrop-blur-xl">
+      {context && <div className="flex items-center gap-2 px-4 pt-3 text-xs text-emerald-200"><FileUp size={14}/><span className="min-w-0 truncate" title={context.name}>{context.name}</span><button type="button" disabled={disabled || busy || listening} onClick={() => save(undefined, true)} aria-label="Remove job description" className="rounded p-1 hover:bg-red-900/50"><X size={14}/></button></div>}
+      <div className="flex items-end gap-1 px-2 py-1">
+        <button ref={trigger} type="button" disabled={disabled || busy || !session || listening} onClick={() => setOpen(!open)} aria-expanded={open} aria-controls="recruiter-details" aria-label="Add job description" title="Attach a file or add job requirements" className="mb-2 grid h-9 w-9 shrink-0 place-items-center rounded-full text-emerald-200 hover:bg-emerald-900/40 disabled:opacity-50"><Plus size={20}/></button>
+        {children}
+      </div>
+      {busy && <p role="status" className="px-4 pb-2 text-xs text-emerald-100/70">Processing requirements…</p>}
+    </div>
     {notice && <p role="status" className="mt-2 text-xs text-amber-100">{notice}</p>}
-  </section>;
+  </div>;
 }
