@@ -27,6 +27,8 @@ import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { AssistantSpace } from "./AssistantSpace";
 import styles from "./Assistant.module.css";
 
+import { RecruiterPanel, type RecruiterStatus } from "./RecruiterPanel";
+
 import { VoiceInterface } from "./VoiceInterface";
 
 
@@ -99,6 +101,16 @@ export function Assistant({ onVoiceModeChange }: { onVoiceModeChange?: (active: 
   const reducedMotion = useReducedMotion();
   const speechPulse = useRef(0);
   const chatRef = useRef<HTMLDivElement | null>(null);
+  const composerRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const composer = composerRef.current;
+    if (!composer) return;
+    const observer = new ResizeObserver(() => {
+      if (chatRef.current) chatRef.current.style.paddingBottom = `${composer.offsetHeight + 24}px`;
+    });
+    observer.observe(composer);
+    return () => observer.disconnect();
+  }, []);
   const followMessagesRef = useRef(true);
   /* ==========================================================
      MESSAGES
@@ -255,19 +267,16 @@ export function Assistant({ onVoiceModeChange }: { onVoiceModeChange?: (active: 
      SELECTED VOICE
   ========================================================== */
 
-  const [language, setLanguage] = useState<AssistantLanguage>("en");
   const languageRef = useRef<AssistantLanguage>("en");
   const [voiceNotice, setVoiceNotice] = useState("");
   useEffect(() => {
     const saved = localStorage.getItem("bharat_ai_language");
     if (saved === "en" || saved === "hi" || saved === "ne") {
       languageRef.current = saved;
-      setLanguage(saved);
     }
   }, []);
   const rememberLanguage = (value: AssistantLanguage) => {
     languageRef.current = value;
-    setLanguage(value);
     try { localStorage.setItem("bharat_ai_language", value); } catch {}
   };
   const speechRef = useRef<StreamingSpeech | null>(null);
@@ -309,6 +318,9 @@ export function Assistant({ onVoiceModeChange }: { onVoiceModeChange?: (active: 
   ========================================================== */
 
   const sessionIdRef = useRef<string>("");
+  const [recruiterBaseSession, setRecruiterBaseSession] = useState("");
+  const recruiterStatusRef = useRef<RecruiterStatus>({ session: "", revision: null, busy: false });
+  const recruiterSession = recruiterBaseSession && activeConversationId ? `${recruiterBaseSession}:${activeConversationId}` : "";
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -318,16 +330,13 @@ export function Assistant({ onVoiceModeChange }: { onVoiceModeChange?: (active: 
     let sessionId = window.localStorage.getItem("bharat_ai_session_id");
 
     if (!sessionId) {
-      sessionId =
-        "session_" +
-        Date.now() +
-        "_" +
-        Math.random().toString(36).substring(2, 10);
+      sessionId = `session_${crypto.randomUUID()}`;
 
       window.localStorage.setItem("bharat_ai_session_id", sessionId);
     }
 
     sessionIdRef.current = sessionId;
+    setRecruiterBaseSession(sessionId);
   }, []);
 
   /* ==========================================================
@@ -403,6 +412,12 @@ export function Assistant({ onVoiceModeChange }: { onVoiceModeChange?: (active: 
   const sendMessage = async (messageText: string, fromVoice = false, conversation = false) => {
     const text = messageText.trim();
     if (!text || requestActiveRef.current || conversationBusyRef.current) return;
+    const currentSession = `${sessionIdRef.current || "session"}:${activeConversationRef.current || "chat"}`;
+    const recruiterStatus = recruiterStatusRef.current;
+    if (recruiterStatus.session !== currentSession || recruiterStatus.busy) {
+      setVoiceNotice("Please wait for the job-description panel or stop dictation before asking a question.");
+      return;
+    }
     stopSpeaking();
     rememberLanguage(detectLanguage(text, languageRef.current));
     setVoiceNotice("");
@@ -445,10 +460,14 @@ export function Assistant({ onVoiceModeChange }: { onVoiceModeChange?: (active: 
           question: text,
           voice: fromVoice || conversation,
           language: languageRef.current,
-          session_id: `${sessionIdRef.current || "session"}:${activeConversationRef.current || "chat"}`,
+          session_id: currentSession,
+          recruiter_revision: recruiterStatus.revision,
         }),
       });
-      if (!response.ok) throw new Error(`Backend error: ${response.status}`);
+      if (!response.ok) {
+        const failure = await response.json().catch(() => null);
+        throw new Error(typeof failure?.detail === "string" ? failure.detail : `Backend error: ${response.status}`);
+      }
       if (!response.body) throw new Error("Streaming is unavailable.");
       await readAnswerStream(response.body, token => {
         if (controller.signal.aborted) return;
@@ -475,7 +494,7 @@ export function Assistant({ onVoiceModeChange }: { onVoiceModeChange?: (active: 
         id: `${id}_error`, role: "ai", timestamp,
         content: fullAnswer
           ? "The response was interrupted. Please try again."
-          : "I'm having trouble connecting to my AI server. Please try again.",
+          : error instanceof Error ? error.message : "I'm having trouble connecting to my AI server. Please try again.",
       }]);
       // Avoid an automatic microphone retry loop after a server failure.
       if (conversation) {
@@ -653,6 +672,10 @@ export function Assistant({ onVoiceModeChange }: { onVoiceModeChange?: (active: 
   ========================================================== */
 
   const toggleListening = () => {
+    if (recruiterStatusRef.current.busy) {
+      setVoiceNotice("Finish attaching or dictating requirements before starting chat voice.");
+      return;
+    }
     if (!recognitionRef.current) {
       alert("Voice recognition is not supported. Please use Chrome or Edge.");
 
@@ -713,6 +736,10 @@ export function Assistant({ onVoiceModeChange }: { onVoiceModeChange?: (active: 
   ========================================================== */
 
   const startVoiceConversation = () => {
+    if (recruiterStatusRef.current.busy) {
+      setVoiceNotice("Finish attaching or dictating requirements before starting chat voice.");
+      return;
+    }
     if (!recognitionRef.current) {
       alert("Voice recognition is not supported. Please use Chrome or Edge.");
 
@@ -1195,22 +1222,18 @@ export function Assistant({ onVoiceModeChange }: { onVoiceModeChange?: (active: 
       ==================================================== */}
 
       <div
+        ref={composerRef}
         className={styles.composerWrap}
       >
-        <div className="flex items-center gap-2 px-3 pb-2 text-sm text-slate-200">
-          <label htmlFor="assistant-language">Language / भाषा</label>
-          <select id="assistant-language" value={language}
-            className="rounded border border-slate-600 bg-slate-900 px-2 py-1"
-            onChange={event => {
-              stopVoiceConversation();
-              rememberLanguage(event.target.value as AssistantLanguage);
-              setVoiceNotice("");
-            }}>
-            <option value="en">English</option>
-            <option value="hi">हिन्दी</option>
-            <option value="ne">नेपाली</option>
-          </select>
-        </div>
+        <RecruiterPanel key={recruiterSession} api={API_BASE_URL} session={recruiterSession}
+          language={() => languageRef.current} disabled={isGenerating}
+          onStatus={status => { recruiterStatusRef.current = status; }}
+          onBegin={() => {
+            conversationModeRef.current = false;
+            setIsConversationMode(false);
+            try { recognitionRef.current?.stop(); } catch {}
+            cancelCurrentResponse();
+          }} />
         {voiceNotice && <p role="status" className="px-3 pb-2 text-sm text-amber-200">{voiceNotice}</p>}
         <form
           onSubmit={handleSendMessage}
