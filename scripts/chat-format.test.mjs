@@ -63,3 +63,11 @@ test("request history is bounded by both message count and API character limits"
   assert.ok(history.every(message => message.content.length <= 12000));
   assert.ok(history.reduce((length, message) => length + message.content.length, 0) <= 24000);
 });
+
+
+test("generic document disclaimer is hidden while answer and genuine uncertainty remain", () => {
+  const html = render("Bharat has built Python projects.\n\n*All information is drawn from Bharat’s documented personal profile, education record, achievements, certifications, and project listings.*\n\nHis production experience is not established by the available evidence.");
+  assert.match(html, /Bharat has built Python projects/);
+  assert.match(html, /production experience is not established/);
+  assert.doesNotMatch(html, /All information|education record|project listings/);
+});

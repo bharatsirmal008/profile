@@ -1,6 +1,7 @@
 /** Hide model-added document citations while preserving the actual answer. */
 export function hideDocumentSources(text: string): string {
   return text
+    .replace(/\*{0,2}(?:All (?:information|details|facts)(?: (?:above|provided|here))? (?:is|are) (?:drawn|taken|sourced|derived) from|This (?:answer|response) is based (?:only |solely )?on)[^.\n]*(?:documented|personal profile|education record|project listings|certifications)[^.\n]*\.?\*{0,2}/gi, "")
     .replace(/(^|\n)[ \t>*#_-]*\*{0,2}(?:sources?|स्रोत|स्रोतहरू)\*{0,2}\s*:[^\n]*/gi, "$1")
     .replace(/\*{0,2}(?:sources?|स्रोत|स्रोतहरू)\s*:[^\n]*\.pdf[^\n]*/gi, "")
     .replace(/\s*[([{][^()\[\]{}\n]*\.pdf[^()\[\]{}\n]*[)\]}]/gi, "")
