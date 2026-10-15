@@ -1,7 +1,7 @@
-import { AssistantWindowControls } from "@/components/AssistantWindowControls";
-import { JoJoWordmark } from "@/components/JoJoWordmark";
-import { Assistant } from "@/components/Assistant";
-import { HeaderSocialLinks } from "@/components/HeaderSocialLinks";
+import { AssistantWindowControls } from "@/components/assistant/AssistantWindowControls";
+import { JoJoWordmark } from "@/components/ui/JoJoWordmark";
+import { Assistant } from "@/components/assistant/Assistant";
+import { HeaderSocialLinks } from "@/components/ui/HeaderSocialLinks";
 
 export default function AssistantPage() {
   return (

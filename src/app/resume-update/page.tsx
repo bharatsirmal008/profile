@@ -1,6 +1,6 @@
-import { AdminGate } from "@/components/AdminGate";
+import { AdminGate } from "@/components/admin/AdminGate";
 import type { Metadata } from "next";
-import { Hero } from "@/components/Hero";
+import { Hero } from "@/components/desktop/Hero";
 
 export const metadata: Metadata = {
   title: "Edit Resume | Bharat Sirmal",

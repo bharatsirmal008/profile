@@ -2,12 +2,33 @@
 
 import { useEffect, useState } from "react";
 import { cloudEnabled, getSupabase } from "./supabase";
+import { createResourceCache } from "./resource-cache";
 
 export type ContentKind = "project" | "certificate" | "resume";
 export type CloudRecord = { id: string; kind: ContentKind; data: Record<string, unknown>; is_private: boolean; is_deleted: boolean };
 const BUCKET = "portfolio-files";
 const CHANGED = "portfolio-cloud-changed";
-export function notifyCloud() { window.dispatchEvent(new Event(CHANGED)); }
+const publicContent = createResourceCache<CloudRecord[]>(45_000);
+export function notifyCloud() { publicContent.clear(); window.dispatchEvent(new Event(CHANGED)); }
+
+async function loadResolvedRecords(kind: ContentKind, includePrivate: boolean) {
+  const records = await listCloud(kind, includePrivate);
+  const links = new Map<string, Promise<string>>();
+  return Promise.all(records.map(async record => {
+    const data = { ...record.data };
+    await Promise.all((["imagePath", "filePath"] as const).map(async key => {
+      const path = data[key];
+      if (typeof path !== "string" || !path) return;
+      if (!links.has(path)) links.set(path, signedFile(path).catch(() => ""));
+      data[key === "imagePath" ? "image" : "fileUrl"] = await links.get(path);
+    }));
+    return { ...record, data };
+  }));
+}
+export async function preloadPublicContent(kind: ContentKind) {
+  if (!cloudEnabled) return;
+  return publicContent.read(kind, () => loadResolvedRecords(kind, false));
+}
 
 export async function requireAdmin() {
   const client = getSupabase();
@@ -59,8 +80,9 @@ export async function deleteCloud(kind: ContentKind, id: string) {
 }
 
 export function useCloudRecords(kind: ContentKind, includePrivate = false) {
-  const [records, setRecords] = useState<CloudRecord[]>([]);
-  const [loading, setLoading] = useState(cloudEnabled);
+  const cached = !includePrivate && cloudEnabled ? publicContent.peek(kind) : undefined;
+  const [records, setRecords] = useState<CloudRecord[]>(() => cached ?? []);
+  const [loading, setLoading] = useState(cloudEnabled && !cached);
   const [error, setError] = useState("");
   useEffect(() => {
     if (!cloudEnabled) return;
@@ -69,24 +91,22 @@ export function useCloudRecords(kind: ContentKind, includePrivate = false) {
     const refresh = async () => {
       const current = ++version;
       try {
-        const next = await listCloud(kind, includePrivate);
-        // Resolve asset links before publishing the next snapshot.
-        await Promise.all(next.map(async record => {
-          for (const key of ["imagePath", "filePath"] as const) {
-            const path = record.data[key];
-            if (typeof path === "string" && path) {
-              try { record.data[key === "imagePath" ? "image" : "fileUrl"] = await signedFile(path); }
-              catch { record.data[key === "imagePath" ? "image" : "fileUrl"] = ""; }
-            }
-          }
-        }));
+        const next = includePrivate
+          ? await loadResolvedRecords(kind, true)
+          : await publicContent.read(kind, () => loadResolvedRecords(kind, false));
         if (!cancelled && current === version) { setRecords(next); setError(""); }
       } catch (cause) {
         if (!cancelled && current === version) setError(cause instanceof Error ? cause.message : "Cloud content could not be loaded. Please retry.");
       } finally { if (!cancelled && current === version) setLoading(false); }
     };
     void refresh();
-    const { data: { subscription } } = getSupabase().auth.onAuthStateChange(() => { setTimeout(() => { if (!cancelled) void refresh(); }, 0); });
+    const { data: { subscription } } = getSupabase().auth.onAuthStateChange(event => {
+      if (event === "INITIAL_SESSION") return; // The initial refresh already waits for auth.
+      publicContent.clear();
+      version++;
+      if (includePrivate) setRecords([]);
+      setTimeout(() => { if (!cancelled) void refresh(); }, 0);
+    });
     const timer = window.setInterval(refresh, 240_000);
     window.addEventListener(CHANGED, refresh);
     window.addEventListener("focus", refresh);

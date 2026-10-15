@@ -1,6 +1,6 @@
-import { AdminGate } from "@/components/AdminGate";
+import { AdminGate } from "@/components/admin/AdminGate";
 import type { Metadata } from "next";
-import { CertificateUploadForm } from "@/components/CertificateUploadForm";
+import { CertificateUploadForm } from "@/components/admin/CertificateUploadForm";
 
 export const metadata: Metadata = {
   title: "Manage Certificates | Bharat Sirmal",

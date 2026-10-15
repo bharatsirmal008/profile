@@ -40,3 +40,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Local previews and obsolete downloaded modules
+/output/
+/tmp/
+/next.lock/

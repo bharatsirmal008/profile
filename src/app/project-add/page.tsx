@@ -1,6 +1,6 @@
-import { AdminGate } from "@/components/AdminGate";
+import { AdminGate } from "@/components/admin/AdminGate";
 import type { Metadata } from "next";
-import { ProjectAddForm } from "@/components/ProjectAddForm";
+import { ProjectAddForm } from "@/components/admin/ProjectAddForm";
 
 export const metadata: Metadata = {
   title: "Add Project | Bharat Sirmal",
