@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import React, { useState, useRef, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -35,6 +36,7 @@ import { AttachmentCard } from "./AttachmentCard";
 import { readAttachment, type ChatAttachment } from "../../lib/attachment-store";
 
 import { VoiceInterface } from "./VoiceInterface";
+const ElevenLabsVoice = dynamic(() => import("./ElevenLabsVoice"), { ssr: false });
 
 
 
@@ -301,10 +303,11 @@ export const Assistant = React.memo(function Assistant({ onVoiceModeChange }: { 
   ========================================================== */
 
   const [isConversationMode, setIsConversationMode] = useState(false);
+  const [realtimeVoiceOpen, setRealtimeVoiceOpen] = useState(false);
   useEffect(() => {
-    onVoiceModeChange?.(isConversationMode);
+    onVoiceModeChange?.(isConversationMode || realtimeVoiceOpen);
     return () => onVoiceModeChange?.(false);
-  }, [isConversationMode, onVoiceModeChange]);
+  }, [isConversationMode, realtimeVoiceOpen, onVoiceModeChange]);
 
   const conversationModeRef = useRef(false);
 
@@ -787,6 +790,20 @@ export const Assistant = React.memo(function Assistant({ onVoiceModeChange }: { 
   ========================================================== */
 
   const startVoiceConversation = () => {
+    if (recruiterStatusRef.current.busy) {
+      setVoiceNotice("Finish attaching requirements before starting voice.");
+      return;
+    }
+    cancelCurrentResponse();
+    conversationModeRef.current = false;
+    try { recognitionRef.current?.abort(); } catch {}
+    setIsConversationMode(false);
+    setIsListening(false);
+    setRealtimeVoiceOpen(true);
+    setInputValue("");
+  };
+
+  const startBrowserVoiceConversation = () => {
     if (recruiterStatusRef.current.busy) {
       setVoiceNotice("Finish attaching or dictating requirements before starting chat voice.");
       return;
@@ -1519,6 +1536,21 @@ export const Assistant = React.memo(function Assistant({ onVoiceModeChange }: { 
       ==================================================== */}
 
       <AnimatePresence>
+      {realtimeVoiceOpen && <ElevenLabsVoice
+        key={activeConversationId || "new-chat"}
+        apiBase={API_BASE_URL}
+        chatRef={recruiterSession || `session_${sessionIdRef.current}:chat_${activeConversationId || "new"}`}
+        history={requestHistory(messages.filter(message => !excludedHistoryRef.current.get(recruiterSession)?.has(message.id)))}
+        contextRevision={recruiterStatusRef.current.session === recruiterSession ? recruiterStatusRef.current.revision || undefined : undefined}
+        onClose={() => setRealtimeVoiceOpen(false)}
+        onBrowserVoice={() => { setRealtimeVoiceOpen(false); startBrowserVoiceConversation(); }}
+        onMessage={message => {
+          const next = { ...message, timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) };
+          setMessages(previous => previous.some(item => item.id === message.id)
+            ? previous.map(item => item.id === message.id ? next : item)
+            : [...previous, next]);
+        }}
+      />}
       {isConversationMode && (
         <VoiceInterface
           isThinking={isLoading}

@@ -54,3 +54,5 @@ npm run build
 - Generated previews, downloaded module caches, `.next/` and `node_modules/` are not source assets.
 
 Live portfolio: https://bharatsirmal.vercel.app/
+
+Optional real-time voice: see [ElevenLabs setup](docs/ELEVENLABS_SETUP.md). Voice stays disabled until the backend and verified language agents are configured.

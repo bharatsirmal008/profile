@@ -12,6 +12,7 @@
     "typecheck": "tsc --noEmit --incremental false"
   },
   "dependencies": {
+    "@elevenlabs/react": "1.18.0",
     "@fontsource/amarna": "^5.3.0",
     "@supabase/supabase-js": "^2.117.3",
     "framer-motion": "^12.38.0",

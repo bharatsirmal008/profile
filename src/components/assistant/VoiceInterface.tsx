@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useSyncExternalStore, type RefObject, type CSSProperties } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, type RefObject, type CSSProperties, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { X, Minus, Maximize2 } from "lucide-react";
@@ -14,10 +14,14 @@ type Props = {
   isThinking: boolean;
   speechPulse: RefObject<number>;
   onClose: () => void;
+  audioLevels?: () => { input: number; output: number };
+  statusOverride?: string;
+  toolbar?: ReactNode;
+  subtitles?: ReactNode;
 };
 const subscribeHydration = () => () => {};
 
-export function VoiceInterface({ isListening, isSpeaking, isThinking, speechPulse, onClose }: Props) {
+export function VoiceInterface({ isListening, isSpeaking, isThinking, speechPulse, onClose, audioLevels, statusOverride, toolbar, subtitles }: Props) {
   const reducedMotion = useReducedMotion();
   const mounted = useSyncExternalStore(subscribeHydration, () => true, () => false);
   const [micStatus, setMicStatus] = useState<"connecting" | "ready" | "unavailable">("connecting");
@@ -35,7 +39,7 @@ export function VoiceInterface({ isListening, isSpeaking, isThinking, speechPuls
     dialog?.querySelector<HTMLButtonElement>("button")?.focus();
     const trapFocus = (event: KeyboardEvent) => {
       if (event.key !== "Tab") return;
-      const buttons = dialog?.querySelectorAll<HTMLButtonElement>("button:not(:disabled)");
+      const buttons = dialog?.querySelectorAll<HTMLElement>("button:not(:disabled), input:not(:disabled), select:not(:disabled), summary");
       if (!buttons?.length) return;
       const first = buttons[0];
       const last = buttons[buttons.length - 1];
@@ -46,6 +50,7 @@ export function VoiceInterface({ isListening, isSpeaking, isThinking, speechPuls
     return () => { dialog?.removeEventListener("keydown", trapFocus); if (previous?.isConnected) previous.focus(); };
   }, [mounted]);
   useEffect(() => {
+    if (audioLevels) return; // ElevenLabs owns its microphone and analyser.
     let disposed = false;
     let stream: MediaStream | null = null;
     let context: AudioContext | null = null;
@@ -76,7 +81,7 @@ export function VoiceInterface({ isListening, isSpeaking, isThinking, speechPuls
       stream?.getTracks().forEach(track => track.stop());
       if (context && context.state !== "closed") void context.close();
     };
-  }, []);
+  }, [audioLevels]);
 
   useEffect(() => {
     if (!mounted) return;
@@ -91,7 +96,10 @@ export function VoiceInterface({ isListening, isSpeaking, isThinking, speechPuls
       lastDraw = time;
       const state = stateRef.current;
       let level = 0;
-      if (state.isListening && analyserRef.current) {
+      if (audioLevels) {
+        const actual = audioLevels();
+        level = state.isSpeaking ? actual.output : state.isListening ? actual.input : 0;
+      } else if (state.isListening && analyserRef.current) {
         analyserRef.current.getByteFrequencyData(samples);
         level = samples.slice(2, 45).reduce((sum, sample) => sum + sample, 0) / (43 * 255);
       } else if (state.isSpeaking) {
@@ -110,9 +118,9 @@ export function VoiceInterface({ isListening, isSpeaking, isThinking, speechPuls
     };
     frame = requestAnimationFrame(draw);
     return () => cancelAnimationFrame(frame);
-  }, [mounted, reducedMotion, speechPulse]);
+  }, [mounted, reducedMotion, speechPulse, audioLevels]);
 
-  const status = micStatus === "unavailable" ? "Microphone Unavailable" : isSpeaking ? "Speaking…" : isThinking ? "Thinking…" : isListening ? "Listening…" : micStatus === "connecting" ? "Connecting…" : "Ready to Talk";
+  const status = statusOverride || (micStatus === "unavailable" ? "Microphone Unavailable" : isSpeaking ? "Speaking…" : isThinking ? "Thinking…" : isListening ? "Listening…" : micStatus === "connecting" ? "Connecting…" : "Ready to Talk");
   const phase = isSpeaking ? "speaking" : isThinking ? "thinking" : isListening ? "listening" : "idle";
   if (!mounted) return null;
   return createPortal(
@@ -128,6 +136,7 @@ export function VoiceInterface({ isListening, isSpeaking, isThinking, speechPuls
         </div>
         <div className={styles.scene} ref={visualRef} data-phase={phase}>
           <AssistantSpace />
+          {toolbar}
           <div className={styles.sideClouds} aria-hidden="true" />
           <div className={styles.beams} aria-hidden="true"><i /><i /><i /></div>
           <div className={styles.status} role="status" aria-live="polite">
@@ -146,6 +155,7 @@ export function VoiceInterface({ isListening, isSpeaking, isThinking, speechPuls
             </div>
           </motion.div>
           <div className={styles.platform} aria-hidden="true"><i /><i /><i /><i /></div>
+          {subtitles}
           <motion.button type="button" className={styles.endButton} onClick={onClose} aria-label="End voice conversation" whileHover={reducedMotion ? undefined : { scale: 1.08 }} whileTap={reducedMotion ? undefined : { scale: .94 }}><X size={27} strokeWidth={1.5} /></motion.button>
           {micStatus === "unavailable" && <p className={styles.error}>Allow microphone access in your browser, then reopen voice mode.</p>}
         </div>
