@@ -15,7 +15,28 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Bharat Sirmal",
+  metadataBase: new URL("https://bharatsirmal.vercel.app"),
+  title: {
+    default: "Bharat Sirmal | Full-Stack Developer Portfolio",
+    template: "%s | Bharat Sirmal",
+  },
+  description: "Explore Bharat Sirmal's portfolio, full-stack development projects, skills, education and resume. Meet JOJO, his personal AI assistant.",
+  authors: [{ name: "Bharat Sirmal", url: "https://bharatsirmal.vercel.app" }],
+  openGraph: {
+    url: "https://bharatsirmal.vercel.app/",
+    type: "website",
+    locale: "en_US",
+    siteName: "Bharat Sirmal",
+    title: "Bharat Sirmal | Full-Stack Developer Portfolio",
+    description: "Explore Bharat Sirmal's projects, skills, education and resume, and meet JOJO, his personal AI assistant.",
+    images: [{ url: "/profile_image.png", alt: "Bharat Sirmal" }],
+  },
+  twitter: {
+    card: "summary",
+    title: "Bharat Sirmal | Full-Stack Developer Portfolio",
+    description: "Full-stack development projects, skills, education and resume by Bharat Sirmal.",
+    images: ["/profile_image.png"],
+  },
 };
 
 export default function RootLayout({

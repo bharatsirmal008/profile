@@ -1,7 +1,22 @@
+import type { Metadata } from "next";
 import { AssistantWindowControls } from "@/components/assistant/AssistantWindowControls";
 import { JoJoWordmark } from "@/components/ui/JoJoWordmark";
 import { Assistant } from "@/components/assistant/Assistant";
 import { HeaderSocialLinks } from "@/components/ui/HeaderSocialLinks";
+
+export const metadata: Metadata = {
+  title: "JOJO AI Assistant",
+  description: "Ask JOJO about Bharat Sirmal's projects, skills, experience and fit for your job requirements.",
+  alternates: { canonical: "/assistant" },
+  openGraph: {
+    type: "website",
+    siteName: "Bharat Sirmal",
+    images: [{ url: "/profile_image.png", alt: "Bharat Sirmal" }],
+    title: "JOJO AI Assistant | Bharat Sirmal",
+    description: "Ask Bharat Sirmal's personal AI assistant about his projects, skills and experience.",
+    url: "https://bharatsirmal.vercel.app/assistant",
+  },
+};
 
 export default function AssistantPage() {
   return (
