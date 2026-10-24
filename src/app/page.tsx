@@ -24,8 +24,11 @@ const profile = {
       "@type": "WebSite",
       "@id": "https://bharatsirmal.vercel.app/#website",
       name: "Bharat Sirmal",
+      alternateName: ["Bharat Sirmal Portfolio", "bharatsirmal.vercel.app"],
+      inLanguage: "en",
       url: "https://bharatsirmal.vercel.app/",
       author: { "@id": "https://bharatsirmal.vercel.app/#person" },
+      publisher: { "@id": "https://bharatsirmal.vercel.app/#person" },
     },
   ],
 };

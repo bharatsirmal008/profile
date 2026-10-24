@@ -16,6 +16,10 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://bharatsirmal.vercel.app"),
+  applicationName: "Bharat Sirmal",
+  creator: "Bharat Sirmal",
+  publisher: "Bharat Sirmal",
+  icons: { shortcut: "/favicon.ico" },
   title: {
     default: "Bharat Sirmal - Software Engineer | Full-Stack Developer | AI/ML Developer",
     template: "%s | Bharat Sirmal",
